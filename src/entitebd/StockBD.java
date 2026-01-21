@@ -12,6 +12,7 @@ public class StockBD {
         Connection con = ConnectionBD.getConnection();
         Statement st = con.createStatement();
 
+        // ✅ IMPORTANT: Pas de vérification d'existence - on crée toujours une NOUVELLE ligne
         String sql = "INSERT INTO stock_medicament (ref_medicament, quantite_produit, prix_achat, prix_vente, seuil_min) VALUES (" +
                 stock.getRefMedicament() + ", " +
                 stock.getQuantiteProduit() + ", " +
@@ -28,10 +29,10 @@ public class StockBD {
                 generatedId = keys.getInt(1);
             }
             keys.close();
+            System.out.println("✅ Nouveau stock créé avec ID: " + generatedId);
         }
 
         st.close();
-        System.out.println("Stock ajouté !");
         return generatedId;
     }
 

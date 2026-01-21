@@ -6,23 +6,29 @@ import entitebd.RapportAnalyseBD;
 import entite.Commande;
 import entite.VoieCommande;
 import entite.RapportAnalyse;
-import exception.ProduitNonTrouveException;
 import java.sql.SQLException;
 import java.util.ArrayList;
-
+import entitebd.StockBD;
+import entitebd.MedicamentBD;
+import entite.StockMedicament;
+/**
+ * Gestion des commandes SANS mise à jour automatique du stock
+ * Le stock sera géré manuellement lors de la réception dans l'interface
+ */
 public class GestionCommande {
     private CommandeBD commandeBD;
     private VoieCommandeBD voieCommandeBD;
-    private GestionStock gestionStock;
     private RapportAnalyseBD rapportBD;
 
     public GestionCommande() {
         this.commandeBD = new CommandeBD();
         this.voieCommandeBD = new VoieCommandeBD();
-        this.gestionStock = new GestionStock();
         this.rapportBD = new RapportAnalyseBD();
     }
 
+    /**
+     * Créer une nouvelle commande
+     */
     public int creerCommande(Commande commande, ArrayList<VoieCommande> lignes)
             throws SQLException, IllegalArgumentException {
 
@@ -43,7 +49,6 @@ public class GestionCommande {
 
         for (VoieCommande ligne : lignes) {
             ligne.setNumCommande(numCommande);
-            // ✅ CORRECTION: Calculer le prix total avant d'ajouter
             ligne.setPrixTotalVoieCommande();
             voieCommandeBD.ajouterLigne(ligne);
         }
@@ -52,6 +57,9 @@ public class GestionCommande {
         return numCommande;
     }
 
+    /**
+     * Modifier une commande existante
+     */
     public void modifierCommande(int numCommande, ArrayList<VoieCommande> nouvellesLignes)
             throws SQLException, IllegalArgumentException {
 
@@ -65,7 +73,6 @@ public class GestionCommande {
         }
 
         for (VoieCommande ligne : nouvellesLignes) {
-            // ✅ CORRECTION: Calculer le prix total avant modification
             ligne.setPrixTotalVoieCommande();
             voieCommandeBD.modifierLigne(ligne);
         }
@@ -77,6 +84,9 @@ public class GestionCommande {
         System.out.println("✅ Commande #" + numCommande + " modifiée");
     }
 
+    /**
+     * Annuler une commande
+     */
     public void annulerCommande(int numCommande) throws SQLException {
 
         Commande commande = commandeBD.getCommandeById(numCommande);
@@ -100,8 +110,12 @@ public class GestionCommande {
         System.out.println("✅ Commande #" + numCommande + " annulée");
     }
 
-    public void receptionnerCommande(int numCommande, int numCarteEmp)
-            throws SQLException, ProduitNonTrouveException {
+    /**
+     * Marquer une commande comme reçue
+     * Chaque ligne de commande crée une NOUVELLE ligne de stock
+     */
+    public void marquerCommeRecue(int numCommande, int numCarteEmp)
+            throws SQLException {
 
         Commande commande = commandeBD.getCommandeById(numCommande);
         if (commande == null) {
@@ -115,20 +129,73 @@ public class GestionCommande {
             throw new IllegalArgumentException("Impossible de réceptionner une commande annulée");
         }
 
+        // Récupérer les lignes de commande
         ArrayList<VoieCommande> lignes = voieCommandeBD.getLignesParCommande(numCommande);
 
+        // ✅ NOUVEAU: Créer une nouvelle ligne de stock pour chaque ligne de commande
+        StockBD stockBD = new StockBD();
+        MedicamentBD medicamentBD = new MedicamentBD();
+
+        int stocksCrees = 0;
         for (VoieCommande ligne : lignes) {
-            gestionStock.augmenterStock(ligne.getRefMedicament(), ligne.getQuantite());
+            try {
+                // Créer un nouveau StockMedicament
+                StockMedicament nouveauStock = new StockMedicament();
+                nouveauStock.setRefMedicament(ligne.getRefMedicament());
+                nouveauStock.setQuantiteProduit(ligne.getQuantite());
+                nouveauStock.setPrixAchat(ligne.getPrixUnitaire());
+
+                // Prix de vente par défaut: +30% du prix d'achat
+                nouveauStock.setPrixVente(ligne.getPrixUnitaire() * 1.3);
+
+                // Seuil minimal par défaut
+                nouveauStock.setSeuilMin(10);
+
+                // Ajouter la nouvelle ligne de stock
+                int numStock = stockBD.ajouter(nouveauStock);
+
+                if (numStock > 0) {
+                    stocksCrees++;
+                    System.out.println("✓ Nouveau stock créé: #" + numStock +
+                            " pour médicament #" + ligne.getRefMedicament());
+                }
+
+            } catch (SQLException e) {
+                System.err.println("⚠ Erreur lors de la création du stock pour médicament #" +
+                        ligne.getRefMedicament() + ": " + e.getMessage());
+                // Continue avec les autres lignes
+            }
         }
 
+        // Changer le statut de la commande
         commande.setStatut("Reçue");
         commandeBD.modifierCommande(commande);
 
+        // Mettre à jour le chiffre d'affaires
         mettreAJourChiffreAffaires(commande.getMontantTotalCommande(), numCarteEmp);
 
-        System.out.println("✅ Commande #" + numCommande + " réceptionnée et stock mis à jour");
+        System.out.println("✅ Commande #" + numCommande + " réceptionnée");
+        System.out.println("✅ " + stocksCrees + " nouvelles lignes de stock créées sur " +
+                lignes.size() + " lignes de commande");
     }
 
+    /**
+     * ANCIENNE MÉTHODE - Conservée pour compatibilité mais DÉCONSEILLÉE
+     * @deprecated Utilisez plutôt la réception manuelle dans l'interface
+     */
+    @Deprecated
+    public void receptionnerCommande(int numCommande, int numCarteEmp)
+            throws SQLException {
+        System.out.println("⚠️ ATTENTION: Utilisation de la méthode dépréciée receptionnerCommande()");
+        System.out.println("⚠️ Cette méthode ne met plus à jour le stock automatiquement");
+        System.out.println("⚠️ Utilisez l'interface de réception pour gérer le stock manuellement");
+
+        marquerCommeRecue(numCommande, numCarteEmp);
+    }
+
+    /**
+     * Obtenir le bilan d'une commande
+     */
     public BilanCommande obtenirBilanCommande(int numCommande) throws SQLException {
         Commande commande = commandeBD.getCommandeById(numCommande);
         if (commande == null) {
@@ -139,14 +206,23 @@ public class GestionCommande {
         return new BilanCommande(commande, lignes);
     }
 
+    /**
+     * Lister toutes les commandes
+     */
     public ArrayList<Commande> listerToutesCommandes() throws SQLException {
         return commandeBD.afficherToutesCommandes();
     }
 
+    /**
+     * Obtenir les lignes d'une commande
+     */
     public ArrayList<VoieCommande> getLignesCommande(int numCommande) throws SQLException {
         return voieCommandeBD.getLignesParCommande(numCommande);
     }
 
+    /**
+     * Calculer le total d'une commande
+     */
     private double calculerTotalCommande(ArrayList<VoieCommande> lignes) {
         double total = 0;
         for (VoieCommande ligne : lignes) {
@@ -155,6 +231,9 @@ public class GestionCommande {
         return total;
     }
 
+    /**
+     * Mettre à jour le chiffre d'affaires
+     */
     private void mettreAJourChiffreAffaires(double montant, int numCarteEmp) throws SQLException {
         try {
             RapportAnalyse rapport = rapportBD.getRapportByEmploye(numCarteEmp);
@@ -162,7 +241,6 @@ public class GestionCommande {
                 rapport.setChiffreAffaire(rapport.getChiffreAffaire() + montant);
                 rapportBD.modifier(rapport);
             } else {
-                // ✅ Génération d'un ID unique pour le nouveau rapport
                 rapport = new RapportAnalyse();
                 rapport.setId((int)(System.currentTimeMillis() % 1000000));
                 rapport.setNumCarteEmp(numCarteEmp);
@@ -175,6 +253,9 @@ public class GestionCommande {
         }
     }
 
+    /**
+     * Classe interne pour le bilan d'une commande
+     */
     public static class BilanCommande {
         private Commande commande;
         private ArrayList<VoieCommande> lignes;
