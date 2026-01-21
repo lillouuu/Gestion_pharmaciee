@@ -8,7 +8,9 @@ import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.sql.SQLException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 
 public class ReceptionnerCommandeFrame extends JFrame {
     private GestionCommande gestionCommande;
@@ -23,26 +25,29 @@ public class ReceptionnerCommandeFrame extends JFrame {
     private JButton btnReceptionner;
 
     private Commande commandeActuelle;
+    private ArrayList<VoieCommande> lignesCommande;
+    private SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy");
 
     public ReceptionnerCommandeFrame() {
         gestionCommande = new GestionCommande();
         medicamentBD = new MedicamentBD();
         stockBD = new StockBD();
+        lignesCommande = new ArrayList<>();
         initComponents();
     }
 
     private void initComponents() {
         setTitle("Réceptionner une Commande");
-        setSize(1000, 700);
+        setSize(1200, 750);
         setLocationRelativeTo(null);
         setLayout(new BorderLayout(10, 10));
 
         // Panel titre
         JPanel topPanel = new JPanel();
         topPanel.setBackground(new Color(40, 167, 69));
-        topPanel.setPreferredSize(new Dimension(1000, 50));
+        topPanel.setPreferredSize(new Dimension(1200, 50));
 
-        JLabel titleLabel = new JLabel("📦 Réceptionner une Commande");
+        JLabel titleLabel = new JLabel("📦 Réceptionner une Commande et Créer Nouveaux Stocks");
         titleLabel.setFont(new Font("Arial", Font.BOLD, 18));
         titleLabel.setForeground(Color.WHITE);
         topPanel.add(titleLabel);
@@ -64,11 +69,11 @@ public class ReceptionnerCommandeFrame extends JFrame {
         JPanel infoPanel = createInfoPanel();
         splitPane.setTopComponent(infoPanel);
 
-        // Panel lignes avec impact stock
+        // Panel lignes avec formulaire de complétion
         JPanel lignesPanel = createLignesPanel();
         splitPane.setBottomComponent(lignesPanel);
 
-        splitPane.setDividerLocation(220);
+        splitPane.setDividerLocation(200);
         mainPanel.add(splitPane, BorderLayout.CENTER);
 
         add(mainPanel, BorderLayout.CENTER);
@@ -85,7 +90,6 @@ public class ReceptionnerCommandeFrame extends JFrame {
         gbc.insets = new Insets(5, 5, 5, 5);
         gbc.fill = GridBagConstraints.HORIZONTAL;
 
-        // Numéro commande
         gbc.gridx = 0; gbc.gridy = 0;
         panel.add(new JLabel("Numéro Commande:"), gbc);
 
@@ -94,7 +98,6 @@ public class ReceptionnerCommandeFrame extends JFrame {
         txtNumCommande.addActionListener(e -> chargerCommande());
         panel.add(txtNumCommande, gbc);
 
-        // Numéro carte employé
         gbc.gridx = 2;
         panel.add(new JLabel("Num Carte Emp:"), gbc);
 
@@ -103,7 +106,6 @@ public class ReceptionnerCommandeFrame extends JFrame {
         txtNumCarteEmp.setText("1");
         panel.add(txtNumCarteEmp, gbc);
 
-        // Bouton charger
         gbc.gridx = 4;
         JButton btnCharger = new JButton("🔍 Charger");
         btnCharger.setBackground(new Color(0, 123, 255));
@@ -119,7 +121,7 @@ public class ReceptionnerCommandeFrame extends JFrame {
         JPanel panel = new JPanel(new BorderLayout(5, 5));
         panel.setBorder(BorderFactory.createTitledBorder("Informations Commande"));
 
-        txtInfoCommande = new JTextArea(9, 40);
+        txtInfoCommande = new JTextArea(8, 40);
         txtInfoCommande.setEditable(false);
         txtInfoCommande.setFont(new Font("Monospaced", Font.PLAIN, 12));
         txtInfoCommande.setBackground(new Color(245, 245, 245));
@@ -133,25 +135,63 @@ public class ReceptionnerCommandeFrame extends JFrame {
 
     private JPanel createLignesPanel() {
         JPanel panel = new JPanel(new BorderLayout(5, 5));
-        panel.setBorder(BorderFactory.createTitledBorder("Détails des Lignes - Impact sur le Stock"));
+        panel.setBorder(BorderFactory.createTitledBorder("Détails des Lignes - Compléter les informations pour créer nouveaux stocks"));
 
         String[] columns = {
-                "ID", "Médicament", "Quantité Cmdée", "Prix Unit.",
-                "Stock Actuel", "Nouveau Stock", "Sous-Total"
+                "ID", "Médicament", "Qté", "Prix Achat", 
+                "Date Fab", "Date Exp", "Prix Vente", "Seuil", "✓"
         };
         tableModel = new DefaultTableModel(columns, 0) {
             @Override
+            public Class<?> getColumnClass(int columnIndex) {
+                if (columnIndex == 8) return Boolean.class;
+                return String.class;
+            }
+            
+            @Override
             public boolean isCellEditable(int row, int column) {
-                return false;
+                // Seules les colonnes 4,5,6,7 (dates, prix vente, seuil) sont éditables
+                return column >= 4 && column <= 7;
             }
         };
 
         tableLignes = new JTable(tableModel);
-        tableLignes.setRowHeight(25);
+        tableLignes.setRowHeight(30);
+        tableLignes.getColumnModel().getColumn(0).setPreferredWidth(40);
         tableLignes.getColumnModel().getColumn(1).setPreferredWidth(200);
+        tableLignes.getColumnModel().getColumn(8).setPreferredWidth(30);
+
+        // Ajouter un bouton pour marquer comme complété
+        tableLignes.getColumnModel().getColumn(8).setCellRenderer(
+            new javax.swing.table.DefaultTableCellRenderer() {
+                @Override
+                public Component getTableCellRendererComponent(JTable table, Object value,
+                        boolean isSelected, boolean hasFocus, int row, int column) {
+                    JCheckBox checkBox = new JCheckBox();
+                    checkBox.setSelected(value != null && (Boolean) value);
+                    checkBox.setHorizontalAlignment(SwingConstants.CENTER);
+                    return checkBox;
+                }
+            }
+        );
 
         JScrollPane scrollTable = new JScrollPane(tableLignes);
         panel.add(scrollTable, BorderLayout.CENTER);
+
+        // Panel avec boutons d'aide
+        JPanel helpPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        helpPanel.setBackground(new Color(255, 243, 205));
+        JLabel lblHelp = new JLabel("💡 Double-cliquez sur les cellules pour modifier les dates (jj/mm/aaaa), prix de vente et seuil minimal");
+        lblHelp.setFont(new Font("Arial", Font.ITALIC, 11));
+        helpPanel.add(lblHelp);
+        
+        JButton btnValiderLigne = new JButton("✓ Valider la ligne sélectionnée");
+        btnValiderLigne.setBackground(new Color(40, 167, 69));
+        btnValiderLigne.setForeground(Color.WHITE);
+        btnValiderLigne.addActionListener(e -> validerLigneSelectionnee());
+        helpPanel.add(btnValiderLigne);
+        
+        panel.add(helpPanel, BorderLayout.SOUTH);
 
         return panel;
     }
@@ -159,7 +199,7 @@ public class ReceptionnerCommandeFrame extends JFrame {
     private JPanel createBottomPanel() {
         JPanel panel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
 
-        btnReceptionner = new JButton("📦 Réceptionner et Mettre à Jour Stock");
+        btnReceptionner = new JButton("📦 Réceptionner et Créer les Nouveaux Stocks");
         btnReceptionner.setBackground(new Color(40, 167, 69));
         btnReceptionner.setForeground(Color.WHITE);
         btnReceptionner.setFont(new Font("Arial", Font.BOLD, 14));
@@ -185,7 +225,7 @@ public class ReceptionnerCommandeFrame extends JFrame {
 
             GestionCommande.BilanCommande bilan = gestionCommande.obtenirBilanCommande(numCommande);
             commandeActuelle = bilan.getCommande();
-            ArrayList<VoieCommande> lignes = bilan.getLignes();
+            lignesCommande = bilan.getLignes();
 
             // Afficher les informations
             StringBuilder sb = new StringBuilder();
@@ -194,7 +234,6 @@ public class ReceptionnerCommandeFrame extends JFrame {
             sb.append("═══════════════════════════════════════\n\n");
             sb.append("Numéro: #").append(commandeActuelle.getNumCommande()).append("\n");
             sb.append("Date: ").append(commandeActuelle.getDateAchat()).append("\n");
-            sb.append("Date limite: ").append(commandeActuelle.getDateLimRendreProduit()).append("\n");
             sb.append("Statut: ").append(commandeActuelle.getStatut()).append("\n");
             sb.append("Fournisseur: ").append(commandeActuelle.getNumFournisseur()).append("\n");
             sb.append("Total: ").append(String.format("%.2f DT", bilan.getTotal())).append("\n");
@@ -206,30 +245,36 @@ public class ReceptionnerCommandeFrame extends JFrame {
                 btnReceptionner.setEnabled(false);
             } else if ("Annulée".equals(commandeActuelle.getStatut())) {
                 sb.append("\n⚠️ Cette commande est annulée.\n");
-                sb.append("Elle ne peut PAS être réceptionnée.\n");
                 btnReceptionner.setEnabled(false);
             } else {
                 sb.append("\n✅ Prête à être réceptionnée.\n");
-                btnReceptionner.setEnabled(true);
+                sb.append("⚠️ Veuillez compléter les informations pour chaque ligne.\n");
+                btnReceptionner.setEnabled(false); // Sera activé après validation des lignes
             }
 
             txtInfoCommande.setText(sb.toString());
 
-            // Afficher les lignes avec impact stock
+            // Afficher les lignes avec valeurs par défaut
             tableModel.setRowCount(0);
-            for (VoieCommande ligne : lignes) {
+            for (VoieCommande ligne : lignesCommande) {
                 String nomMed = getNomMedicament(ligne.getRefMedicament());
-                int stockActuel = getStockActuel(ligne.getRefMedicament());
-                int nouveauStock = stockActuel + ligne.getQuantite();
+                
+                // Valeurs par défaut
+                String dateFab = dateFormat.format(new Date());
+                String dateExp = dateFormat.format(new Date(System.currentTimeMillis() + 365L * 24 * 60 * 60 * 1000)); // +1 an
+                String prixVente = String.format("%.2f", ligne.getPrixUnitaire() * 1.3); // +30% marge par défaut
+                String seuil = "10";
 
                 tableModel.addRow(new Object[]{
                         ligne.getIdLigneCommande(),
                         nomMed,
                         ligne.getQuantite(),
-                        String.format("%.2f DT", ligne.getPrixUnitaire()),
-                        stockActuel,
-                        nouveauStock + " (+" + ligne.getQuantite() + ")",
-                        String.format("%.2f DT", ligne.calculerTotal())
+                        String.format("%.2f", ligne.getPrixUnitaire()),
+                        dateFab,
+                        dateExp,
+                        prixVente,
+                        seuil,
+                        false // Non validé
                 });
             }
 
@@ -237,16 +282,82 @@ public class ReceptionnerCommandeFrame extends JFrame {
             JOptionPane.showMessageDialog(this,
                     "Numéro de commande invalide",
                     "Erreur", JOptionPane.ERROR_MESSAGE);
-        } catch (IllegalArgumentException e) {
-            JOptionPane.showMessageDialog(this,
-                    e.getMessage(),
-                    "Erreur", JOptionPane.ERROR_MESSAGE);
-            txtInfoCommande.setText("Commande introuvable.");
-            tableModel.setRowCount(0);
-            btnReceptionner.setEnabled(false);
-        } catch (SQLException e) {
+        } catch (Exception e) {
             JOptionPane.showMessageDialog(this,
                     "Erreur: " + e.getMessage(),
+                    "Erreur", JOptionPane.ERROR_MESSAGE);
+            e.printStackTrace();
+        }
+    }
+
+    private void validerLigneSelectionnee() {
+        int selectedRow = tableLignes.getSelectedRow();
+        if (selectedRow == -1) {
+            JOptionPane.showMessageDialog(this,
+                    "Veuillez sélectionner une ligne",
+                    "Information", JOptionPane.INFORMATION_MESSAGE);
+            return;
+        }
+
+        try {
+            // Valider les données de la ligne
+            String dateFabStr = (String) tableModel.getValueAt(selectedRow, 4);
+            String dateExpStr = (String) tableModel.getValueAt(selectedRow, 5);
+            String prixVenteStr = (String) tableModel.getValueAt(selectedRow, 6);
+            String seuilStr = (String) tableModel.getValueAt(selectedRow, 7);
+
+            // Parser et valider
+            Date dateFab = dateFormat.parse(dateFabStr);
+            Date dateExp = dateFormat.parse(dateExpStr);
+            double prixVente = Double.parseDouble(prixVenteStr);
+            int seuil = Integer.parseInt(seuilStr);
+
+            // Vérifications
+            if (dateExp.before(dateFab)) {
+                JOptionPane.showMessageDialog(this,
+                        "La date d'expiration doit être après la date de fabrication!",
+                        "Erreur", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            if (prixVente <= 0 || seuil < 0) {
+                JOptionPane.showMessageDialog(this,
+                        "Le prix de vente et le seuil doivent être positifs!",
+                        "Erreur", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            // Marquer comme validé
+            tableModel.setValueAt(true, selectedRow, 8);
+            
+            JOptionPane.showMessageDialog(this,
+                    "✓ Ligne validée!",
+                    "Succès", JOptionPane.INFORMATION_MESSAGE);
+
+            // Vérifier si toutes les lignes sont validées
+            boolean toutesValidees = true;
+            for (int i = 0; i < tableModel.getRowCount(); i++) {
+                if (!(Boolean) tableModel.getValueAt(i, 8)) {
+                    toutesValidees = false;
+                    break;
+                }
+            }
+
+            if (toutesValidees) {
+                btnReceptionner.setEnabled(true);
+                JOptionPane.showMessageDialog(this,
+                        "✅ Toutes les lignes sont validées!\n" +
+                        "Vous pouvez maintenant réceptionner la commande.",
+                        "Prêt", JOptionPane.INFORMATION_MESSAGE);
+            }
+
+        } catch (java.text.ParseException e) {
+            JOptionPane.showMessageDialog(this,
+                    "Format de date invalide! Utilisez: jj/mm/aaaa",
+                    "Erreur", JOptionPane.ERROR_MESSAGE);
+        } catch (NumberFormatException e) {
+            JOptionPane.showMessageDialog(this,
+                    "Valeurs numériques invalides!",
                     "Erreur", JOptionPane.ERROR_MESSAGE);
         }
     }
@@ -259,37 +370,40 @@ public class ReceptionnerCommandeFrame extends JFrame {
             return;
         }
 
+        // Vérifier que toutes les lignes sont validées
+        for (int i = 0; i < tableModel.getRowCount(); i++) {
+            if (!(Boolean) tableModel.getValueAt(i, 8)) {
+                JOptionPane.showMessageDialog(this,
+                        "Toutes les lignes doivent être validées avant la réception!",
+                        "Erreur", JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+        }
+
         try {
             int numCarteEmp = Integer.parseInt(txtNumCarteEmp.getText().trim());
-            int numCommande = commandeActuelle.getNumCommande();
 
-            // Préparer le résumé des changements
-            StringBuilder resumeStock = new StringBuilder();
-            resumeStock.append("IMPACT SUR LE STOCK:\n\n");
+            // Préparer le résumé
+            StringBuilder resume = new StringBuilder();
+            resume.append("NOUVEAUX STOCKS À CRÉER:\n\n");
 
             for (int i = 0; i < tableModel.getRowCount(); i++) {
                 String medicament = (String) tableModel.getValueAt(i, 1);
                 int quantite = (int) tableModel.getValueAt(i, 2);
-                int stockActuel = (int) tableModel.getValueAt(i, 4);
-
-                resumeStock.append("• ").append(medicament).append("\n");
-                resumeStock.append("  Stock: ").append(stockActuel)
-                        .append(" → ").append(stockActuel + quantite)
-                        .append(" (+").append(quantite).append(")\n\n");
+                resume.append("• ").append(medicament).append(": ").append(quantite).append(" unités\n");
             }
 
             // Demander confirmation
             int confirmation = JOptionPane.showConfirmDialog(this,
                     "📦 RÉCEPTION DE COMMANDE\n\n" +
-                            "Commande: #" + numCommande + "\n" +
-                            "Total: " + String.format("%.2f DT", commandeActuelle.getMontantTotalCommande()) + "\n" +
+                            "Commande: #" + commandeActuelle.getNumCommande() + "\n" +
                             "Lignes: " + tableModel.getRowCount() + "\n\n" +
                             "Cette action va:\n" +
-                            "✅ Mettre à jour le stock pour tous les médicaments\n" +
-                            "✅ Changer le statut en 'Reçue'\n" +
-                            "✅ Mettre à jour le chiffre d'affaires\n\n" +
-                            resumeStock.toString() +
-                            "Confirmer la réception?",
+                            "✅ Créer " + tableModel.getRowCount() + " NOUVELLES LIGNES dans le stock\n" +
+                            "✅ Chaque ligne aura ses propres caractéristiques\n" +
+                            "✅ Changer le statut en 'Reçue'\n\n" +
+                            resume.toString() +
+                            "\nConfirmer la réception?",
                     "Confirmer Réception",
                     JOptionPane.YES_NO_OPTION,
                     JOptionPane.QUESTION_MESSAGE);
@@ -298,43 +412,64 @@ public class ReceptionnerCommandeFrame extends JFrame {
                 return;
             }
 
-            // Réceptionner
-            gestionCommande.receptionnerCommande(numCommande, numCarteEmp);
+            // Créer les nouveaux stocks
+            int stocksCrees = 0;
+            for (int i = 0; i < tableModel.getRowCount(); i++) {
+                VoieCommande ligne = lignesCommande.get(i);
+                
+                // Récupérer les données du tableau
+                Date dateFab = dateFormat.parse((String) tableModel.getValueAt(i, 4));
+                Date dateExp = dateFormat.parse((String) tableModel.getValueAt(i, 5));
+                double prixVente = Double.parseDouble((String) tableModel.getValueAt(i, 6));
+                int seuil = Integer.parseInt((String) tableModel.getValueAt(i, 7));
 
-            // Afficher le bilan final
-            GestionCommande.BilanCommande bilan = gestionCommande.obtenirBilanCommande(numCommande);
+                // Créer un nouveau StockMedicament
+                StockMedicament nouveauStock = new StockMedicament();
+                nouveauStock.setRefMedicament(ligne.getRefMedicament());
+                nouveauStock.setQuantiteProduit(ligne.getQuantite());
+                nouveauStock.setPrixAchat(ligne.getPrixUnitaire());
+                nouveauStock.setPrixVente(prixVente);
+                nouveauStock.setSeuilMin(seuil);
 
+                // Ajouter à la base de données (nouvelle ligne)
+                int numStock = stockBD.ajouter(nouveauStock);
+                
+                if (numStock > 0) {
+                    stocksCrees++;
+                    
+                    // Mettre à jour les dates du médicament si nécessaire
+                    Medicament med = medicamentBD.rechercherParRef(ligne.getRefMedicament());
+                    if (med != null) {
+                        med.setDateFabrication(dateFab);
+                        med.setDateExpiration(dateExp);
+                        medicamentBD.modifier(med);
+                    }
+                }
+            }
+
+            // Changer le statut de la commande
+            commandeActuelle.setStatut("Reçue");
+            new entitebd.CommandeBD().modifierCommande(commandeActuelle);
+
+            // Afficher le résultat
             StringBuilder sb = new StringBuilder();
             sb.append("═══════════════════════════════════════\n");
-            sb.append("     COMMANDE RÉCEPTIONNÉE\n");
+            sb.append("     RÉCEPTION RÉUSSIE\n");
             sb.append("═══════════════════════════════════════\n\n");
-            sb.append("Numéro: #").append(bilan.getCommande().getNumCommande()).append("\n");
-            sb.append("Statut: ").append(bilan.getCommande().getStatut()).append("\n");
-            sb.append("Total: ").append(String.format("%.2f DT", bilan.getTotal())).append("\n");
-            sb.append("Lignes traitées: ").append(bilan.getNombreLignes()).append("\n");
-            sb.append("\n✅ Stock mis à jour avec succès\n");
-            sb.append("✅ Chiffre d'affaires mis à jour\n");
-            sb.append("✅ Statut changé en 'Reçue'\n");
+            sb.append("Commande: #").append(commandeActuelle.getNumCommande()).append("\n");
+            sb.append("Nouveaux stocks créés: ").append(stocksCrees).append("\n");
+            sb.append("Statut: Reçue\n\n");
+            sb.append("✅ Chaque ligne de commande a créé\n");
+            sb.append("   une nouvelle ligne de stock avec ses\n");
+            sb.append("   propres caractéristiques.\n");
             sb.append("\n═══════════════════════════════════════\n");
 
             JOptionPane.showMessageDialog(this, sb.toString(),
                     "Réception Réussie", JOptionPane.INFORMATION_MESSAGE);
 
-            // Actualiser l'affichage
             txtInfoCommande.setText(sb.toString());
             btnReceptionner.setEnabled(false);
 
-            // Recharger pour montrer les nouveaux stocks
-            chargerCommande();
-
-        } catch (NumberFormatException e) {
-            JOptionPane.showMessageDialog(this,
-                    "Numéro de carte employé invalide",
-                    "Erreur", JOptionPane.ERROR_MESSAGE);
-        } catch (IllegalArgumentException e) {
-            JOptionPane.showMessageDialog(this,
-                    e.getMessage(),
-                    "Erreur", JOptionPane.ERROR_MESSAGE);
         } catch (Exception e) {
             JOptionPane.showMessageDialog(this,
                     "Erreur lors de la réception: " + e.getMessage(),
@@ -350,20 +485,8 @@ public class ReceptionnerCommandeFrame extends JFrame {
                 return med.getNom() + " (#" + refMedicament + ")";
             }
         } catch (SQLException e) {
-            // Ignorer
+            e.printStackTrace();
         }
         return "Médicament #" + refMedicament;
-    }
-
-    private int getStockActuel(int refMedicament) {
-        try {
-            StockMedicament stock = stockBD.rechercherParRef(refMedicament);
-            if (stock != null) {
-                return stock.getQuantiteProduit();
-            }
-        } catch (SQLException e) {
-            // Ignorer
-        }
-        return 0;
     }
 }
