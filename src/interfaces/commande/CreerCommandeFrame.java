@@ -3,18 +3,22 @@ package interfaces.commande;
 import entite.*;
 import entitebd.StockBD;
 import entitebd.MedicamentBD;
+import entitebd.FournisseurBD;
 import gestion.GestionCommande;
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.sql.SQLException;
+import java.text.SimpleDateFormat;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 public class CreerCommandeFrame extends JFrame {
     private GestionCommande gestionCommande;
     private MedicamentBD medicamentBD;
+    private FournisseurBD fournisseurBD;
 
     private JComboBox<MedicamentItem> cmbMedicament;
     private JSpinner spnQuantite;
@@ -30,18 +34,22 @@ public class CreerCommandeFrame extends JFrame {
     private JTable tableLignes;
     private ArrayList<VoieCommande> lignesCommande;
 
+    private SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy");
+
     public CreerCommandeFrame() {
         gestionCommande = new GestionCommande();
         medicamentBD = new MedicamentBD();
+        fournisseurBD = new FournisseurBD();
         lignesCommande = new ArrayList<>();
 
         initComponents();
         chargerMedicaments();
+        chargerFournisseurs();
     }
 
     private void initComponents() {
         setTitle("Créer une Commande");
-        setSize(900, 700);
+        setSize(1000, 750);
         setLocationRelativeTo(null);
         setLayout(new BorderLayout(10, 10));
 
@@ -86,7 +94,7 @@ public class CreerCommandeFrame extends JFrame {
         panel.add(new JLabel("Fournisseur:"), gbc);
 
         gbc.gridx = 1;
-        cmbFournisseur = new JComboBox<>(new Integer[]{1, 2, 3, 4, 5});
+        cmbFournisseur = new JComboBox<>();
         panel.add(cmbFournisseur, gbc);
 
         // Numéro carte employé
@@ -110,14 +118,26 @@ public class CreerCommandeFrame extends JFrame {
         gbc.insets = new Insets(5, 5, 5, 5);
         gbc.fill = GridBagConstraints.HORIZONTAL;
 
-        // Médicament
+        // Médicament avec bouton ajouter
         gbc.gridx = 0; gbc.gridy = 0;
         ajoutPanel.add(new JLabel("Médicament:"), gbc);
 
         gbc.gridx = 1; gbc.gridwidth = 2;
+        JPanel medPanel = new JPanel(new BorderLayout(5, 0));
         cmbMedicament = new JComboBox<>();
+        cmbMedicament.setEditable(true);
         cmbMedicament.addActionListener(e -> onMedicamentSelected());
-        ajoutPanel.add(cmbMedicament, gbc);
+        medPanel.add(cmbMedicament, BorderLayout.CENTER);
+
+        JButton btnNouveauMed = new JButton("➕ Nouveau");
+        btnNouveauMed.setToolTipText("Ajouter un nouveau médicament");
+        btnNouveauMed.setBackground(new Color(40, 167, 69));
+        btnNouveauMed.setForeground(Color.WHITE);
+        btnNouveauMed.setFocusPainted(false);
+        btnNouveauMed.addActionListener(e -> ajouterNouveauMedicament());
+        medPanel.add(btnNouveauMed, BorderLayout.EAST);
+
+        ajoutPanel.add(medPanel, gbc);
 
         // Quantité
         gbc.gridx = 0; gbc.gridy = 1; gbc.gridwidth = 1;
@@ -217,13 +237,27 @@ public class CreerCommandeFrame extends JFrame {
         }
     }
 
+    private void chargerFournisseurs() {
+        try {
+            List<Fournisseur> fournisseurs = fournisseurBD.listerTous();
+            cmbFournisseur.removeAllItems();
+
+            for (Fournisseur f : fournisseurs) {
+                cmbFournisseur.addItem(f.getNumFournisseur());
+            }
+        } catch (SQLException e) {
+            JOptionPane.showMessageDialog(this,
+                    "Erreur lors du chargement des fournisseurs: " + e.getMessage(),
+                    "Erreur", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
     private void onMedicamentSelected() {
         MedicamentItem selected = (MedicamentItem) cmbMedicament.getSelectedItem();
         if (selected != null) {
-            // ✅ CORRECTION: Récupérer le prix depuis le stock
             try {
                 StockBD stockBD = new StockBD();
-                entite.StockMedicament stock = stockBD.rechercherParRef(selected.getMedicament().getRefMedicament());
+                StockMedicament stock = stockBD.rechercherParRef(selected.getMedicament().getRefMedicament());
                 if (stock != null) {
                     txtPrixUnitaire.setText(String.valueOf(stock.getPrixAchat()));
                 } else {
@@ -231,10 +265,83 @@ public class CreerCommandeFrame extends JFrame {
                 }
             } catch (Exception e) {
                 txtPrixUnitaire.setText("0.0");
-                JOptionPane.showMessageDialog(this, "Erreur lors de la récupération du prix");
             }
         }
     }
+
+    /**
+     * Dialogue pour ajouter un nouveau médicament
+     */
+    private void ajouterNouveauMedicament() {
+
+        String nom = JOptionPane.showInputDialog(
+                this,
+                "Entrez le nom du médicament :",
+                "Nouveau médicament",
+                JOptionPane.PLAIN_MESSAGE
+        );
+
+        // Annulation ou nom vide
+        if (nom == null || nom.trim().isEmpty()) {
+            return;
+        }
+
+        try {
+            // Vérifier qu’un fournisseur est sélectionné
+            if (cmbFournisseur.getSelectedItem() == null) {
+                JOptionPane.showMessageDialog(this,
+                        "Veuillez sélectionner un fournisseur avant d'ajouter un médicament",
+                        "Attention",
+                        JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+
+            int numFournisseur = (Integer) cmbFournisseur.getSelectedItem();
+
+            // Création du médicament (SANS stock)
+            Medicament med = new Medicament();
+            med.setNom(nom.trim());
+            med.setDescriptio(""); // description vide
+            med.setNumFournisseur(numFournisseur);
+            med.setDateFabrication(new Date());
+            med.setDateExpiration(
+                    java.sql.Date.valueOf(LocalDate.now().plusYears(2))
+            );
+
+            // Insertion UNIQUEMENT dans la table medicament
+            int refMedicament = medicamentBD.ajouter(med);
+
+            if (refMedicament > 0) {
+
+                med.setRefMedicament(refMedicament);
+
+                // Recharger la liste des médicaments
+                chargerMedicaments();
+
+                // Sélectionner automatiquement le nouveau médicament
+                for (int i = 0; i < cmbMedicament.getItemCount(); i++) {
+                    MedicamentItem item = cmbMedicament.getItemAt(i);
+                    if (item.getMedicament().getRefMedicament() == refMedicament) {
+                        cmbMedicament.setSelectedIndex(i);
+                        break;
+                    }
+                }
+
+                JOptionPane.showMessageDialog(this,
+                        "✅ Médicament ajouté dans la base",
+                        "Succès",
+                        JOptionPane.INFORMATION_MESSAGE);
+            }
+
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(this,
+                    "Erreur lors de l'ajout : " + e.getMessage(),
+                    "Erreur",
+                    JOptionPane.ERROR_MESSAGE);
+            e.printStackTrace();
+        }
+    }
+
 
     private void ajouterLigne() {
         try {
@@ -254,7 +361,6 @@ public class CreerCommandeFrame extends JFrame {
 
             lignesCommande.add(ligne);
 
-            // Ajouter à la table
             double total = ligne.calculerTotal();
             tableModel.addRow(new Object[]{
                     medItem.getMedicament().getNom(),
@@ -265,7 +371,6 @@ public class CreerCommandeFrame extends JFrame {
                     String.format("%.2f DT", total)
             });
 
-            // Réinitialiser
             spnQuantite.setValue(1);
 
             JOptionPane.showMessageDialog(this, "Ligne ajoutée avec succès!");
@@ -305,22 +410,6 @@ public class CreerCommandeFrame extends JFrame {
 
             int numCommande = gestionCommande.creerCommande(commande, lignesCommande);
 
-            // Afficher le bilan
-            afficherBilan(numCommande);
-
-        } catch (SQLException e) {
-            JOptionPane.showMessageDialog(this,
-                    "Erreur lors de la création: " + e.getMessage(),
-                    "Erreur", JOptionPane.ERROR_MESSAGE);
-        } catch (NumberFormatException e) {
-            JOptionPane.showMessageDialog(this,
-                    "Numéro de carte employé invalide",
-                    "Erreur", JOptionPane.ERROR_MESSAGE);
-        }
-    }
-
-    private void afficherBilan(int numCommande) {
-        try {
             GestionCommande.BilanCommande bilan = gestionCommande.obtenirBilanCommande(numCommande);
 
             StringBuilder sb = new StringBuilder();
@@ -341,12 +430,15 @@ public class CreerCommandeFrame extends JFrame {
 
         } catch (SQLException e) {
             JOptionPane.showMessageDialog(this,
-                    "Commande créée mais erreur d'affichage du bilan",
-                    "Avertissement", JOptionPane.WARNING_MESSAGE);
+                    "Erreur lors de la création: " + e.getMessage(),
+                    "Erreur", JOptionPane.ERROR_MESSAGE);
+        } catch (NumberFormatException e) {
+            JOptionPane.showMessageDialog(this,
+                    "Numéro de carte employé invalide",
+                    "Erreur", JOptionPane.ERROR_MESSAGE);
         }
     }
 
-    // Classe interne pour afficher les médicaments
     private static class MedicamentItem {
         private Medicament medicament;
 

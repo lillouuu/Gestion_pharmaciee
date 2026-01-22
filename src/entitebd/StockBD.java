@@ -70,13 +70,77 @@ public class StockBD {
         return stock;
     }
 
+    public List<StockMedicament> getStocksParExpiration(int refMedicament) throws SQLException {
+
+        List<StockMedicament> stocks = new ArrayList<>();
+        Connection con = ConnectionBD.getConnection();
+        Statement st = con.createStatement();
+
+        String sql =
+                "SELECT s.* " +
+                        "FROM stock_medicament s " +
+                        "JOIN medicament m ON s.ref_medicament = m.ref_medicament " +
+                        "WHERE s.ref_medicament = " + refMedicament + " " +
+                        "ORDER BY m.date_expiration ASC";
+
+        ResultSet rs = st.executeQuery(sql);
+
+        while (rs.next()) {
+            stocks.add(mapResultSetToStock(rs));
+        }
+
+        rs.close();
+        st.close();
+
+        return stocks;
+    }
+
+
+
+    public void retirerQuantite(int refMedicament, int quantiteDemandee) throws SQLException {
+
+        List<StockMedicament> stocks = getStocksParExpiration(refMedicament);
+
+        int reste = quantiteDemandee;
+
+        for (StockMedicament stock : stocks) {
+
+            if (reste <= 0) break;
+
+            int qteStock = stock.getQuantiteProduit();
+
+            if (qteStock <= reste) {
+                // 🔴 On vide le lot
+                supprimerParNumStock(stock.getNumStock());
+                reste -= qteStock;
+            } else {
+                // 🟢 On prend une partie
+                stock.setQuantiteProduit(qteStock - reste);
+                modifier(stock);
+                reste = 0;
+            }
+        }
+
+        if (reste > 0) {
+            throw new SQLException("Stock insuffisant pour ce médicament !");
+        }
+    }
+
+
+
 
     public boolean mettreAJourQuantite(int refMedicament, int nouvelleQuantite) throws SQLException {
+
         Connection con = ConnectionBD.getConnection();
         Statement st = con.createStatement();
 
         try {
-            // Étape 1 : Trouver le num_stock avec la date d'expiration la plus proche
+            // Interdire quantité négative
+            if (nouvelleQuantite < 0) {
+                throw new SQLException("Quantité invalide (négative)");
+            }
+
+            // Trouver le lot avec la date d'expiration la plus proche
             String findSql = "SELECT s.num_stock " +
                     "FROM stock_medicament s " +
                     "JOIN medicament m ON s.ref_medicament = m.ref_medicament " +
@@ -92,32 +156,41 @@ public class StockBD {
             }
             rs.close();
 
-            int result;
+            int result = 0;
 
             if (numStock != null) {
-                // UPDATE : Mettre à jour le lot avec la date d'expiration la plus proche
-                String updateSql = "UPDATE stock_medicament " +
-                        "SET quantite_produit = " + nouvelleQuantite + " " +
-                        "WHERE num_stock = " + numStock;
-                result = st.executeUpdate(updateSql);
-                System.out.println("Quantité mise à jour pour le lot avec expiration la plus proche !");
+
+                if (nouvelleQuantite == 0) {
+                    // 🔴 SUPPRESSION si quantité = 0
+                    String deleteSql = "DELETE FROM stock_medicament WHERE num_stock = " + numStock;
+                    result = st.executeUpdate(deleteSql);
+                    System.out.println("🗑 Stock supprimé (quantité = 0)");
+                } else {
+                    // 🟢 UPDATE normal
+                    String updateSql = "UPDATE stock_medicament " +
+                            "SET quantite_produit = " + nouvelleQuantite + " " +
+                            "WHERE num_stock = " + numStock;
+                    result = st.executeUpdate(updateSql);
+                    System.out.println("✅ Quantité mise à jour");
+                }
+
             } else {
-                // INSERT : Aucun lot trouvé, créer une nouvelle ligne
-                String insertSql = "INSERT INTO stock_medicament (ref_medicament, quantite_produit) " +
-                        "VALUES (" + refMedicament + ", " + nouvelleQuantite + ")";
-                result = st.executeUpdate(insertSql);
-                System.out.println("Nouvelle ligne créée dans le stock !");
+                // Aucun stock trouvé
+                if (nouvelleQuantite > 0) {
+                    String insertSql = "INSERT INTO stock_medicament (ref_medicament, quantite_produit) " +
+                            "VALUES (" + refMedicament + ", " + nouvelleQuantite + ")";
+                    result = st.executeUpdate(insertSql);
+                    System.out.println("➕ Nouveau stock créé");
+                }
             }
 
-            st.close();
             return result > 0;
 
-        } catch (SQLException e) {
+        } finally {
             st.close();
-            System.err.println("Erreur lors de la mise à jour du stock : " + e.getMessage());
-            throw e;
         }
     }
+
 
 
     public boolean modifier(StockMedicament stock) throws SQLException {
