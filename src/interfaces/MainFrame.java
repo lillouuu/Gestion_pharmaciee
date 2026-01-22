@@ -27,19 +27,19 @@ public class MainFrame extends JFrame {
         setLayout(new BorderLayout());
 
         JPanel topPanel = new JPanel(new BorderLayout());
-        topPanel.setBackground(new Color(0, 102, 204));
+        topPanel.setBackground(new Color(0x718bbc));
         topPanel.setPreferredSize(new Dimension(1200, 60));
 
         JLabel welcomeLabel = new JLabel("  Connecté: " + employeConnecte.getPrenom() +
                 " " + employeConnecte.getNom() +
                 " (" + employeConnecte.getPoste() + ")");
-        welcomeLabel.setFont(new Font("Arial", Font.BOLD, 16));
-        welcomeLabel.setForeground(Color.WHITE);
+        welcomeLabel.setFont(new Font("Arial", Font.BOLD, 18));
+        welcomeLabel.setForeground(new Color(0xeac4d5));
         topPanel.add(welcomeLabel, BorderLayout.WEST);
 
         JButton logoutButton = new JButton("Déconnexion");
-        logoutButton.setBackground(new Color(204, 0, 0));
-        logoutButton.setForeground(Color.WHITE);
+        logoutButton.setBackground(new Color(0xeac4d5));
+        logoutButton.setForeground(new Color(0x718bbc));
         logoutButton.setFocusPainted(false);
         logoutButton.addActionListener(e -> handleLogout());
         topPanel.add(logoutButton, BorderLayout.EAST);
@@ -47,19 +47,21 @@ public class MainFrame extends JFrame {
         add(topPanel, BorderLayout.NORTH);
 
         tabbedPane = new JTabbedPane();
-        tabbedPane.setFont(new Font("Arial", Font.PLAIN, 14));
+        tabbedPane.setFont(new Font("Arial", Font.PLAIN, 16));
 
         tabbedPane.addTab("📦 Produits", createProductPanel());
         tabbedPane.addTab("🛒 Ventes", createVentePanel());
         tabbedPane.addTab("👥 Clients", createClientPanel());
         tabbedPane.addTab("📋 Commandes", createCommandePanel());
-        tabbedPane.addTab("📊 Stock", createStockPanel());
+
 
         if (employeConnecte.admin()) {
+            tabbedPane.addTab("📊 Stock", createStockPanel());
             tabbedPane.addTab("👨‍💼 Employés", createEmployePanel());
             tabbedPane.addTab("🏢 Fournisseurs", createFournisseurPanel());
             tabbedPane.addTab("📈 Rapports", createRapportPanel());
         }
+        tabbedPane.setBackground(new Color(0xe0d7da));
 
         add(tabbedPane, BorderLayout.CENTER);
     }
@@ -68,21 +70,22 @@ public class MainFrame extends JFrame {
         JPanel panel = new JPanel(new BorderLayout());
 
         JLabel title = new JLabel("Module Gestion des Produits", SwingConstants.CENTER);
-        title.setFont(new Font("Arial", Font.BOLD, 16));
+        title.setFont(new Font("Arial", Font.BOLD, 20));
+        title.setForeground(new Color(0x718bbc));
         panel.add(title, BorderLayout.NORTH);
 
-        JPanel btnPanel = new JPanel(new GridLayout(5, 1, 10, 10));
-        btnPanel.setBorder(BorderFactory.createEmptyBorder(30, 200, 30, 200));
+        JPanel btnPanel = new JPanel(new GridLayout(4, 1, 20, 20));
+        btnPanel.setBorder(BorderFactory.createEmptyBorder(50, 150, 50, 150));
 
         JButton addBtn = new JButton("➕ Ajouter un médicament");
         JButton editBtn = new JButton("✏️ Modifier un médicament");
         JButton deleteBtn = new JButton("🗑️ Supprimer un médicament");
         JButton searchBtn = new JButton("🔍 Rechercher un médicament");
 
-        styleButton(addBtn, new Color(34, 139, 34));
-        styleButton(editBtn, new Color(255, 165, 0));
-        styleButton(deleteBtn, new Color(220, 53, 69));
-        styleButton(searchBtn, new Color(0, 123, 255));
+        styleButton(addBtn, new Color(0xa3bccf),new Color(0xe0d7da));
+        styleButton(editBtn, new Color(0x718bbc),new Color(0xeac4d5));
+        styleButton(deleteBtn, new Color(0xcd7e3),new Color(0x718bbc));
+        styleButton(searchBtn, new Color(0xeac4d5),new Color(0xa3bccf));
 
         btnPanel.add(addBtn);
         btnPanel.add(editBtn);
@@ -114,10 +117,10 @@ public class MainFrame extends JFrame {
         return panel;
     }
 
-    private void styleButton(JButton btn, Color color) {
+    private void styleButton(JButton btn, Color color,Color color2) {
         btn.setBackground(color);
-        btn.setForeground(Color.WHITE);
-        btn.setFont(new Font("Arial", Font.BOLD, 14));
+        btn.setForeground(color2);
+        btn.setFont(new Font("Arial", Font.BOLD, 18));
         btn.setFocusPainted(false);
         btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
     }
@@ -126,19 +129,20 @@ public class MainFrame extends JFrame {
         JPanel panel = new JPanel(new BorderLayout());
 
         JLabel title = new JLabel("Gestion des Ventes", SwingConstants.CENTER);
-        title.setFont(new Font("Arial", Font.BOLD, 16));
+        title.setFont(new Font("Arial", Font.BOLD, 20));
+        title.setForeground(new Color(0x718bbc));
         panel.add(title, BorderLayout.NORTH);
 
-        JPanel btnPanel = new JPanel(new GridLayout(4, 1, 10, 10));
-        btnPanel.setBorder(BorderFactory.createEmptyBorder(30, 200, 30, 200));
+        JPanel btnPanel = new JPanel(new GridLayout(3, 1, 20, 20));
+        btnPanel.setBorder(BorderFactory.createEmptyBorder(50, 150, 50, 150));
 
         JButton btnAdd = new JButton("➕ Nouvelle vente");
         JButton btnHist = new JButton("📜 Historique ventes");
         JButton btnFacture = new JButton("🧾 Imprimer facture");
 
-        styleButton(btnAdd, new Color(40, 167, 69));
-        styleButton(btnHist, new Color(0, 123, 255));
-        styleButton(btnFacture, new Color(108, 117, 125));
+        styleButton(btnAdd, new Color(0x718bbc),new Color(0xeac4d5));
+        styleButton(btnHist, new Color(0xcd7e3),new Color(0x718bbc));
+        styleButton(btnFacture, new Color(0xeac4d5),new Color(0xa3bccf));
 
         btnPanel.add(btnAdd);
         btnPanel.add(btnHist);
@@ -168,21 +172,22 @@ public class MainFrame extends JFrame {
         JPanel panel = new JPanel(new BorderLayout());
 
         JLabel title = new JLabel("Gestion des Clients", SwingConstants.CENTER);
-        title.setFont(new Font("Arial", Font.BOLD, 16));
+        title.setFont(new Font("Arial", Font.BOLD, 20));
+        title.setForeground(new Color(0x718bbc));
         panel.add(title, BorderLayout.NORTH);
 
-        JPanel btnPanel = new JPanel(new GridLayout(4, 1, 10, 10));
-        btnPanel.setBorder(BorderFactory.createEmptyBorder(30, 200, 30, 200));
+        JPanel btnPanel = new JPanel(new GridLayout(4, 1, 20, 20));
+        btnPanel.setBorder(BorderFactory.createEmptyBorder(50, 150, 50, 150));
 
         JButton btnAdd = new JButton("➕ Ajouter client");
         JButton btnSearch = new JButton("🔍 Rechercher client");
         JButton btnHist = new JButton("📜 Historique achats");
         JButton btnFidelite = new JButton("⭐ Fidélité client");
 
-        styleButton(btnAdd, new Color(34, 139, 34));
-        styleButton(btnSearch, new Color(0, 123, 255));
-        styleButton(btnHist, new Color(255, 165, 0));
-        styleButton(btnFidelite, new Color(108, 117, 125));
+        styleButton(btnAdd, new Color(0xa3bccf),new Color(0xe0d7da));
+        styleButton(btnSearch, new Color(0x718bbc),new Color(0xeac4d5));
+        styleButton(btnHist, new Color(0xcd7e3),new Color(0x718bbc));
+        styleButton(btnFidelite, new Color(0xeac4d5),new Color(0xa3bccf));
 
         btnPanel.add(btnAdd);
         btnPanel.add(btnSearch);
@@ -217,29 +222,33 @@ public class MainFrame extends JFrame {
         JPanel panel = new JPanel(new BorderLayout());
 
         JLabel title = new JLabel("Gestion des Commandes", SwingConstants.CENTER);
-        title.setFont(new Font("Arial", Font.BOLD, 16));
+        title.setFont(new Font("Arial", Font.BOLD, 20));
+        title.setForeground(new Color(0x718bbc));
         panel.add(title, BorderLayout.NORTH);
 
-        JPanel btnPanel = new JPanel(new GridLayout(5, 1, 10, 10));
-        btnPanel.setBorder(BorderFactory.createEmptyBorder(30, 200, 30, 200));
+        JPanel btnPanel = new JPanel(new GridLayout(5, 1, 20, 20));
+        btnPanel.setBorder(BorderFactory.createEmptyBorder(50, 150, 50, 150));
 
         JButton btnCreate = new JButton("➕ Créer commande");
         JButton btnEdit = new JButton("✏️ Modifier commande");
         JButton btnCancel = new JButton("❌ Annuler commande");
         JButton btnReceive = new JButton("📦 Réceptionner commande");
         JButton btnList = new JButton("📋 Lister commandes");
+        JButton btnAlert = new JButton("⚠️ Alertes stock");
 
-        styleButton(btnCreate, new Color(34, 139, 34));
-        styleButton(btnEdit, new Color(255, 165, 0));
-        styleButton(btnCancel, new Color(220, 53, 69));
-        styleButton(btnReceive, new Color(40, 167, 69));
-        styleButton(btnList, new Color(0, 123, 255));
+        styleButton(btnCreate, new Color(0xa3bccf),new Color(0xe0d7da));
+        styleButton(btnEdit, new Color(0x718bbc),new Color(0xeac4d5));
+        styleButton(btnCancel, new Color(0xcd7e3),new Color(0x718bbc));
+        styleButton(btnReceive, new Color(0xeac4d5),new Color(0xa3bccf));
+        styleButton(btnList, new Color(0xe0d7da),new Color(0xa3bccf));
+        styleButton(btnAlert, new Color(0x718bbc),new Color(0xeac4d5));
 
         btnPanel.add(btnCreate);
         btnPanel.add(btnEdit);
         btnPanel.add(btnCancel);
         btnPanel.add(btnReceive);
         btnPanel.add(btnList);
+        btnPanel.add(btnAlert);
 
         panel.add(btnPanel, BorderLayout.CENTER);
 
@@ -255,6 +264,10 @@ public class MainFrame extends JFrame {
 
         btnCancel.addActionListener(e -> {
             AnnulerCommandeFrame frame = new AnnulerCommandeFrame();
+            frame.setVisible(true);
+        });
+        btnAlert.addActionListener(e -> {
+            interfaces.stock.AlertesStockFrame frame = new interfaces.stock.AlertesStockFrame();
             frame.setVisible(true);
         });
 
@@ -275,26 +288,26 @@ public class MainFrame extends JFrame {
         JPanel panel = new JPanel(new BorderLayout());
 
         JLabel title = new JLabel("Gestion du Stock", SwingConstants.CENTER);
-        title.setFont(new Font("Arial", Font.BOLD, 16));
+        title.setFont(new Font("Arial", Font.BOLD, 20));
+        title.setForeground(new Color(0x718bbc));
         panel.add(title, BorderLayout.NORTH);
 
-        JPanel btnPanel = new JPanel(new GridLayout(5, 1, 10, 10));
-        btnPanel.setBorder(BorderFactory.createEmptyBorder(30, 200, 30, 200));
+        JPanel btnPanel = new JPanel(new GridLayout(4, 1, 20, 20));
+        btnPanel.setBorder(BorderFactory.createEmptyBorder(50, 150, 50, 150));
 
         JButton btnView = new JButton("👁️ Consulter stock");
-        JButton btnAlert = new JButton("⚠️ Alertes stock");
+
         JButton btnAjust = new JButton("📦 Ajuster stock");
         JButton btnSeuil = new JButton("📉 Modifier seuil minimal");
         JButton btnReport = new JButton("📊 Rapport stock");
 
-        styleButton(btnView, new Color(0, 123, 255));
-        styleButton(btnAlert, new Color(220, 53, 69));
-        styleButton(btnAjust, new Color(255, 165, 0));
-        styleButton(btnSeuil, new Color(108, 117, 125));
-        styleButton(btnReport, new Color(40, 167, 69));
+        styleButton(btnView,new Color(0xa3bccf),new Color(0xe0d7da));
+        styleButton(btnAjust, new Color(0xcd7e3),new Color(0x718bbc));
+        styleButton(btnSeuil, new Color(0xeac4d5),new Color(0xa3bccf));
+        styleButton(btnReport, new Color(0xe0d7da),new Color(0xa3bccf));
 
         btnPanel.add(btnView);
-        btnPanel.add(btnAlert);
+
         btnPanel.add(btnAjust);
         btnPanel.add(btnSeuil);
         btnPanel.add(btnReport);
@@ -306,10 +319,6 @@ public class MainFrame extends JFrame {
             frame.setVisible(true);
         });
 
-        btnAlert.addActionListener(e -> {
-            interfaces.stock.AlertesStockFrame frame = new interfaces.stock.AlertesStockFrame();
-            frame.setVisible(true);
-        });
 
         btnAjust.addActionListener(e -> {
             interfaces.stock.AjusterStockFrame frame = new interfaces.stock.AjusterStockFrame();
@@ -328,19 +337,20 @@ public class MainFrame extends JFrame {
         JPanel panel = new JPanel(new BorderLayout());
 
         JLabel title = new JLabel("Gestion des Employés", SwingConstants.CENTER);
-        title.setFont(new Font("Arial", Font.BOLD, 16));
+        title.setFont(new Font("Arial", Font.BOLD, 20));
+        title.setForeground(new Color(0x718bbc));
         panel.add(title, BorderLayout.NORTH);
 
-        JPanel btnPanel = new JPanel(new GridLayout(5,1,10,10));
-        btnPanel.setBorder(BorderFactory.createEmptyBorder(30, 200, 30, 200));
+        JPanel btnPanel = new JPanel(new GridLayout(3, 1, 20, 20));
+        btnPanel.setBorder(BorderFactory.createEmptyBorder(50, 150, 50, 150));
 
         JButton btnAdd = new JButton("➕ Ajouter employé");
         JButton btnList = new JButton("📋 Liste des employés");
         JButton btnSalary = new JButton("💰 Gérer salaires");
 
-        styleButton(btnAdd, new Color(34, 139, 34));
-        styleButton(btnList, new Color(0, 123, 255));
-        styleButton(btnSalary, new Color(40, 167, 69));
+        styleButton(btnAdd, new Color(0xa3bccf),new Color(0xe0d7da));
+        styleButton(btnSalary, new Color(0x718bbc),new Color(0xeac4d5));
+        styleButton(btnList, new Color(0xe0d7da),new Color(0xa3bccf));
 
         btnPanel.add(btnAdd);
         btnPanel.add(btnList);
@@ -371,21 +381,22 @@ public class MainFrame extends JFrame {
         JPanel panel = new JPanel(new BorderLayout());
 
         JLabel title = new JLabel("Gestion des Fournisseurs", SwingConstants.CENTER);
-        title.setFont(new Font("Arial", Font.BOLD, 16));
+        title.setFont(new Font("Arial", Font.BOLD, 20));
+        title.setForeground(new Color(0x718bbc));
         panel.add(title, BorderLayout.NORTH);
 
-        JPanel btnPanel = new JPanel(new GridLayout(4,1,10,10));
-        btnPanel.setBorder(BorderFactory.createEmptyBorder(30, 200, 30, 200));
+        JPanel btnPanel = new JPanel(new GridLayout(4, 1, 20, 20));
+        btnPanel.setBorder(BorderFactory.createEmptyBorder(50, 150, 50, 150));
 
         JButton btnAdd = new JButton("➕ Ajouter fournisseur");
         JButton btnEdit = new JButton("✏️ Modifier fournisseur");
         JButton btnDelete = new JButton("🗑️ Supprimer fournisseur");
         JButton btnEval = new JButton("⭐ Évaluer fournisseur");
 
-        styleButton(btnAdd, new Color(34, 139, 34));
-        styleButton(btnEdit, new Color(255, 165, 0));
-        styleButton(btnDelete, new Color(220, 53, 69));
-        styleButton(btnEval, new Color(255, 193, 7));
+        styleButton(btnAdd, new Color(0xa3bccf),new Color(0xe0d7da));
+        styleButton(btnEdit, new Color(0x718bbc),new Color(0xeac4d5));
+        styleButton(btnDelete, new Color(0xcd7e3),new Color(0x718bbc));
+        styleButton(btnEval, new Color(0xe0d7da),new Color(0xa3bccf));
 
         btnPanel.add(btnAdd);
         btnPanel.add(btnEdit);
@@ -422,11 +433,12 @@ public class MainFrame extends JFrame {
         JPanel panel = new JPanel(new BorderLayout());
 
         JLabel title = new JLabel("Rapports & Statistiques", SwingConstants.CENTER);
-        title.setFont(new Font("Arial", Font.BOLD, 16));
+        title.setFont(new Font("Arial", Font.BOLD, 20));
+        title.setForeground(new Color(0x718bbc));
         panel.add(title, BorderLayout.NORTH);
 
-        JPanel btnPanel = new JPanel(new GridLayout(5,1,10,10));
-        btnPanel.setBorder(BorderFactory.createEmptyBorder(30, 200, 30, 200));
+        JPanel btnPanel = new JPanel(new GridLayout(5, 1, 20, 20));
+        btnPanel.setBorder(BorderFactory.createEmptyBorder(50, 150, 50, 150));
 
         JButton btnStock = new JButton("📦 Rapport stock");
         JButton btnCA = new JButton("💵 Chiffre d'affaires");
@@ -434,11 +446,11 @@ public class MainFrame extends JFrame {
         JButton btnTop = new JButton("🏆 Top clients");
         JButton btnProd = new JButton("📊 Ventes par produit");
 
-        styleButton(btnStock, new Color(0, 123, 255));
-        styleButton(btnCA, new Color(40, 167, 69));
-        styleButton(btnPerf, new Color(0, 123, 255));
-        styleButton(btnTop, new Color(255, 193, 7));
-        styleButton(btnProd, new Color(108, 117, 125));
+        styleButton(btnStock,new Color(0xa3bccf),new Color(0xe0d7da));
+        styleButton(btnCA, new Color(0x718bbc),new Color(0xeac4d5));
+        styleButton(btnPerf, new Color(0xcd7e3),new Color(0x718bbc));
+        styleButton(btnTop, new Color(0xeac4d5),new Color(0xa3bccf));
+        styleButton(btnProd, new Color(0xe0d7da),new Color(0xa3bccf));
 
         btnPanel.add(btnStock);
         btnPanel.add(btnCA);

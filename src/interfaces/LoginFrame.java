@@ -28,14 +28,14 @@ public class LoginFrame extends JFrame {
 
         JPanel mainPanel = new JPanel();
         mainPanel.setLayout(new GridBagLayout());
-        mainPanel.setBackground(new Color(240, 248, 255));
+        mainPanel.setBackground(new Color(0xe0d7da));
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.insets = new Insets(10, 10, 10, 10);
 
 
         JLabel titleLabel = new JLabel("Système de Gestion de Pharmacie");
         titleLabel.setFont(new Font("Arial", Font.BOLD, 18));
-        titleLabel.setForeground(new Color(0, 102, 204));
+        titleLabel.setForeground(new Color(0x718bbc));
         gbc.gridx = 0;
         gbc.gridy = 0;
         gbc.gridwidth = 2;
@@ -72,7 +72,7 @@ public class LoginFrame extends JFrame {
         gbc.gridwidth = 2;
         gbc.anchor = GridBagConstraints.CENTER;
         loginButton = new JButton("Se connecter");
-        loginButton.setBackground(new Color(0, 153, 76));
+        loginButton.setBackground(new Color(0xeac4d5));
         loginButton.setForeground(Color.WHITE);
         loginButton.setFocusPainted(false);
         loginButton.setPreferredSize(new Dimension(150, 35));
