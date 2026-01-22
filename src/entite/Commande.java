@@ -17,15 +17,7 @@ public class Commande {
         this.montantTotalCommande = montantTotalCommande;
     }
 
-    public double getPrixTotalCommande() {
-        return prixTotalCommande;
-    }
 
-    public void setPrixTotalCommande(double prixTotalCommande) {
-        this.prixTotalCommande = prixTotalCommande;
-    }
-
-    private double prixTotalCommande;
 
 
     public int getNumFournisseur() {
