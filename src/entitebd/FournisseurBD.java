@@ -5,38 +5,67 @@ import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * ✅ VERSION CORRIGÉE - Gestion complète des fournisseurs
+ */
 public class FournisseurBD {
 
     /**
-     * Ajouter un fournisseur
+     * ✅ MÉTHODE CORRIGÉE - Ajouter un fournisseur
+     * Le problème était que num_fournisseur n'était PAS inclus dans l'INSERT
      */
     public int ajouter(Fournisseur f) throws SQLException {
         Connection con = ConnectionBD.getConnection();
         Statement st = con.createStatement();
 
-        String sql = "INSERT INTO fournisseur (nom_fournisseur, adresse, telephone, adresse_mail, rate) VALUES ('" +
-                f.getNomFournisseur() + "', '" +
-                f.getAdresse() + "', '" +
-                f.getTelephone() + "', '" +
-                f.getAdresseEmail() + "', " +
-                f.getRate() + ")";
+        // ✅ CORRECTION PRINCIPALE: Générer un ID si nécessaire
+        int numFournisseur = f.getNumFournisseur();
 
-        int result = st.executeUpdate(sql, Statement.RETURN_GENERATED_KEYS);
-        int generatedId = -1;
-
-        if (result > 0) {
-            ResultSet keys = st.getGeneratedKeys();
-            if (keys.next()) {
-                generatedId = keys.getInt(1);
+        if (numFournisseur <= 0) {
+            // Trouver le prochain ID disponible
+            String sqlMax = "SELECT COALESCE(MAX(num_fournisseur), 0) + 1 as next_id FROM fournisseur";
+            ResultSet rsMax = st.executeQuery(sqlMax);
+            if (rsMax.next()) {
+                numFournisseur = rsMax.getInt("next_id");
             }
-            keys.close();
+            rsMax.close();
         }
 
+        // ✅ IMPORTANT: Inclure EXPLICITEMENT num_fournisseur dans l'INSERT
+        String sql = "INSERT INTO fournisseur (num_fournisseur, nom_fournisseur, adresse, telephone, adresse_mail, rate) " +
+                "VALUES (" +
+                numFournisseur + ", '" +
+                escapeSql(f.getNomFournisseur()) + "', '" +
+                escapeSql(f.getAdresse()) + "', '" +
+                escapeSql(f.getTelephone()) + "', '" +
+                escapeSql(f.getAdresseEmail()) + "', " +
+                f.getRate() + ")";
+
+        System.out.println("🔍 SQL DEBUG: " + sql);
+
+        int result = st.executeUpdate(sql);
         st.close();
-        System.out.println("Fournisseur ajouté !");
-        return generatedId;
+
+        if (result > 0) {
+            System.out.println("✅ Fournisseur ajouté avec succès! ID: " + numFournisseur);
+            return numFournisseur;
+        }
+
+        System.err.println("❌ Échec de l'ajout du fournisseur");
+        return -1;
     }
 
+    /**
+     * Échapper les caractères SQL dangereux (prévention injection SQL)
+     */
+    private String escapeSql(String value) {
+        if (value == null) return "";
+        return value.replace("'", "''");
+    }
+
+    /**
+     * Rechercher un fournisseur par son ID
+     */
     public Fournisseur rechercherParId(int numFournisseur) throws SQLException {
         Connection con = ConnectionBD.getConnection();
         Statement st = con.createStatement();
@@ -54,7 +83,9 @@ public class FournisseurBD {
         return f;
     }
 
-
+    /**
+     * Lister tous les fournisseurs
+     */
     public List<Fournisseur> listerTous() throws SQLException {
         List<Fournisseur> fournisseurs = new ArrayList<>();
         Connection con = ConnectionBD.getConnection();
@@ -72,25 +103,33 @@ public class FournisseurBD {
         return fournisseurs;
     }
 
+    /**
+     * Modifier un fournisseur
+     */
     public boolean modifier(Fournisseur f) throws SQLException {
         Connection con = ConnectionBD.getConnection();
         Statement st = con.createStatement();
 
         String sql = "UPDATE fournisseur SET " +
-                "nom_fournisseur = '" + f.getNomFournisseur() + "', " +
-                "adresse = '" + f.getAdresse() + "', " +
-                "telephone = '" + f.getTelephone() + "', " +
-                "adresse_mail = '" + f.getAdresseEmail() + "', " +
+                "nom_fournisseur = '" + escapeSql(f.getNomFournisseur()) + "', " +
+                "adresse = '" + escapeSql(f.getAdresse()) + "', " +
+                "telephone = '" + escapeSql(f.getTelephone()) + "', " +
+                "adresse_mail = '" + escapeSql(f.getAdresseEmail()) + "', " +
                 "rate = " + f.getRate() + " " +
                 "WHERE num_fournisseur = " + f.getNumFournisseur();
 
         int result = st.executeUpdate(sql);
         st.close();
-        System.out.println("Fournisseur modifié !");
+
+        if (result > 0) {
+            System.out.println("✅ Fournisseur modifié!");
+        }
         return result > 0;
     }
 
-
+    /**
+     * Supprimer un fournisseur
+     */
     public boolean supprimer(int numFournisseur) throws SQLException {
         Connection con = ConnectionBD.getConnection();
         Statement st = con.createStatement();
@@ -99,11 +138,16 @@ public class FournisseurBD {
         int result = st.executeUpdate(sql);
 
         st.close();
-        System.out.println("Fournisseur supprimé !");
+
+        if (result > 0) {
+            System.out.println("✅ Fournisseur supprimé!");
+        }
         return result > 0;
     }
 
-
+    /**
+     * Calculer la performance d'un fournisseur
+     */
     public double calculerPerformance(int numFournisseur) throws SQLException {
         Connection con = ConnectionBD.getConnection();
         Statement st = con.createStatement();
@@ -126,7 +170,9 @@ public class FournisseurBD {
         return performance;
     }
 
-
+    /**
+     * Mapper un ResultSet vers un objet Fournisseur
+     */
     private Fournisseur mapResultSetToFournisseur(ResultSet rs) throws SQLException {
         Fournisseur f = new Fournisseur();
         f.setNumFournisseur(rs.getInt("num_fournisseur"));

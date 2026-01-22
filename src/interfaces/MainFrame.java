@@ -5,6 +5,10 @@ import entite.Employe;
 import interfaces.produit.*;
 import interfaces.stock.*;
 import interfaces.commande.*;
+import interfaces.vente.*;
+import interfaces.client.*;
+import interfaces.fournisseur.*;
+import interfaces.rapport.*;
 
 public class MainFrame extends JFrame {
     private Employe employeConnecte;
@@ -22,7 +26,6 @@ public class MainFrame extends JFrame {
         setLocationRelativeTo(null);
         setLayout(new BorderLayout());
 
-        // Panel supérieur
         JPanel topPanel = new JPanel(new BorderLayout());
         topPanel.setBackground(new Color(0, 102, 204));
         topPanel.setPreferredSize(new Dimension(1200, 60));
@@ -43,7 +46,6 @@ public class MainFrame extends JFrame {
 
         add(topPanel, BorderLayout.NORTH);
 
-        // Onglets
         tabbedPane = new JTabbedPane();
         tabbedPane.setFont(new Font("Arial", Font.PLAIN, 14));
 
@@ -127,17 +129,38 @@ public class MainFrame extends JFrame {
         title.setFont(new Font("Arial", Font.BOLD, 16));
         panel.add(title, BorderLayout.NORTH);
 
-        JPanel btnPanel = new JPanel(new GridLayout(4,1,10,10));
+        JPanel btnPanel = new JPanel(new GridLayout(4, 1, 10, 10));
+        btnPanel.setBorder(BorderFactory.createEmptyBorder(30, 200, 30, 200));
 
         JButton btnAdd = new JButton("➕ Nouvelle vente");
         JButton btnHist = new JButton("📜 Historique ventes");
         JButton btnFacture = new JButton("🧾 Imprimer facture");
+
+        styleButton(btnAdd, new Color(40, 167, 69));
+        styleButton(btnHist, new Color(0, 123, 255));
+        styleButton(btnFacture, new Color(108, 117, 125));
 
         btnPanel.add(btnAdd);
         btnPanel.add(btnHist);
         btnPanel.add(btnFacture);
 
         panel.add(btnPanel, BorderLayout.CENTER);
+
+        btnAdd.addActionListener(e -> {
+            NouvelleVenteFrame frame = new NouvelleVenteFrame();
+            frame.setVisible(true);
+        });
+
+        btnHist.addActionListener(e -> {
+            HistoriqueVentesFrame frame = new HistoriqueVentesFrame();
+            frame.setVisible(true);
+        });
+
+        btnFacture.addActionListener(e -> {
+            ImprimerFactureFrame frame = new ImprimerFactureFrame();
+            frame.setVisible(true);
+        });
+
         return panel;
     }
 
@@ -148,12 +171,18 @@ public class MainFrame extends JFrame {
         title.setFont(new Font("Arial", Font.BOLD, 16));
         panel.add(title, BorderLayout.NORTH);
 
-        JPanel btnPanel = new JPanel(new GridLayout(4,1,10,10));
+        JPanel btnPanel = new JPanel(new GridLayout(4, 1, 10, 10));
+        btnPanel.setBorder(BorderFactory.createEmptyBorder(30, 200, 30, 200));
 
         JButton btnAdd = new JButton("➕ Ajouter client");
         JButton btnSearch = new JButton("🔍 Rechercher client");
         JButton btnHist = new JButton("📜 Historique achats");
         JButton btnFidelite = new JButton("⭐ Fidélité client");
+
+        styleButton(btnAdd, new Color(34, 139, 34));
+        styleButton(btnSearch, new Color(0, 123, 255));
+        styleButton(btnHist, new Color(255, 165, 0));
+        styleButton(btnFidelite, new Color(108, 117, 125));
 
         btnPanel.add(btnAdd);
         btnPanel.add(btnSearch);
@@ -161,6 +190,26 @@ public class MainFrame extends JFrame {
         btnPanel.add(btnFidelite);
 
         panel.add(btnPanel, BorderLayout.CENTER);
+
+        btnAdd.addActionListener(e -> {
+            AjouterClientFrame frame = new AjouterClientFrame();
+            frame.setVisible(true);
+        });
+        btnSearch.addActionListener(e -> {
+            RechercheClientFrame frame = new RechercheClientFrame();
+            frame.setVisible(true);
+        });
+        btnFidelite.addActionListener(e -> {
+            GestionFideliteFrame frame = new GestionFideliteFrame();
+            frame.setVisible(true);
+        });
+
+
+        btnHist.addActionListener(e -> {
+            HistoriqueClientFrame frame = new HistoriqueClientFrame();
+            frame.setVisible(true);
+        });
+
         return panel;
     }
 
@@ -171,7 +220,7 @@ public class MainFrame extends JFrame {
         title.setFont(new Font("Arial", Font.BOLD, 16));
         panel.add(title, BorderLayout.NORTH);
 
-        JPanel btnPanel = new JPanel(new GridLayout(5,1,10,10));
+        JPanel btnPanel = new JPanel(new GridLayout(5, 1, 10, 10));
         btnPanel.setBorder(BorderFactory.createEmptyBorder(30, 200, 30, 200));
 
         JButton btnCreate = new JButton("➕ Créer commande");
@@ -194,7 +243,6 @@ public class MainFrame extends JFrame {
 
         panel.add(btnPanel, BorderLayout.CENTER);
 
-        // ACTIONS DES BOUTONS
         btnCreate.addActionListener(e -> {
             CreerCommandeFrame frame = new CreerCommandeFrame();
             frame.setVisible(true);
@@ -230,10 +278,10 @@ public class MainFrame extends JFrame {
         title.setFont(new Font("Arial", Font.BOLD, 16));
         panel.add(title, BorderLayout.NORTH);
 
-        JPanel btnPanel = new JPanel(new GridLayout(5,1,10,10));
+        JPanel btnPanel = new JPanel(new GridLayout(5, 1, 10, 10));
         btnPanel.setBorder(BorderFactory.createEmptyBorder(30, 200, 30, 200));
 
-        JButton btnView = new JButton("👁️ Consulter stock ");
+        JButton btnView = new JButton("👁️ Consulter stock");
         JButton btnAlert = new JButton("⚠️ Alertes stock");
         JButton btnAjust = new JButton("📦 Ajuster stock");
         JButton btnSeuil = new JButton("📉 Modifier seuil minimal");
@@ -254,7 +302,7 @@ public class MainFrame extends JFrame {
         panel.add(btnPanel, BorderLayout.CENTER);
 
         btnView.addActionListener(e -> {
-            ListeMedicamentFrame frame = new ListeMedicamentFrame();
+            ConsulterStockFrame frame = new ConsulterStockFrame();
             frame.setVisible(true);
         });
 
@@ -284,20 +332,38 @@ public class MainFrame extends JFrame {
         panel.add(title, BorderLayout.NORTH);
 
         JPanel btnPanel = new JPanel(new GridLayout(5,1,10,10));
+        btnPanel.setBorder(BorderFactory.createEmptyBorder(30, 200, 30, 200));
 
         JButton btnAdd = new JButton("➕ Ajouter employé");
-        JButton btnEdit = new JButton("✏️ Modifier employé");
-        JButton btnDelete = new JButton("🗑️ Supprimer employé");
-        JButton btnSalary = new JButton("💰 Gérer salaire");
-        JButton btnCV = new JButton("📄 Consulter CV");
+        JButton btnList = new JButton("📋 Liste des employés");
+        JButton btnSalary = new JButton("💰 Gérer salaires");
+
+        styleButton(btnAdd, new Color(34, 139, 34));
+        styleButton(btnList, new Color(0, 123, 255));
+        styleButton(btnSalary, new Color(40, 167, 69));
 
         btnPanel.add(btnAdd);
-        btnPanel.add(btnEdit);
-        btnPanel.add(btnDelete);
+        btnPanel.add(btnList);
         btnPanel.add(btnSalary);
-        btnPanel.add(btnCV);
 
         panel.add(btnPanel, BorderLayout.CENTER);
+
+        // Actions des boutons
+        btnAdd.addActionListener(e -> {
+            interfaces.employe.AjouterEmployeFrame frame = new interfaces.employe.AjouterEmployeFrame();
+            frame.setVisible(true);
+        });
+
+        btnList.addActionListener(e -> {
+            interfaces.employe.ListerEmployesFrame frame = new interfaces.employe.ListerEmployesFrame();
+            frame.setVisible(true);
+        });
+
+        btnSalary.addActionListener(e -> {
+            interfaces.employe.GererSalaireFrame frame = new interfaces.employe.GererSalaireFrame();
+            frame.setVisible(true);
+        });
+
         return panel;
     }
 
@@ -309,11 +375,17 @@ public class MainFrame extends JFrame {
         panel.add(title, BorderLayout.NORTH);
 
         JPanel btnPanel = new JPanel(new GridLayout(4,1,10,10));
+        btnPanel.setBorder(BorderFactory.createEmptyBorder(30, 200, 30, 200));
 
         JButton btnAdd = new JButton("➕ Ajouter fournisseur");
         JButton btnEdit = new JButton("✏️ Modifier fournisseur");
         JButton btnDelete = new JButton("🗑️ Supprimer fournisseur");
         JButton btnEval = new JButton("⭐ Évaluer fournisseur");
+
+        styleButton(btnAdd, new Color(34, 139, 34));
+        styleButton(btnEdit, new Color(255, 165, 0));
+        styleButton(btnDelete, new Color(220, 53, 69));
+        styleButton(btnEval, new Color(255, 193, 7));
 
         btnPanel.add(btnAdd);
         btnPanel.add(btnEdit);
@@ -321,6 +393,28 @@ public class MainFrame extends JFrame {
         btnPanel.add(btnEval);
 
         panel.add(btnPanel, BorderLayout.CENTER);
+
+        // Actions des boutons
+        btnAdd.addActionListener(e -> {
+            AjouterFournisseurFrame frame = new AjouterFournisseurFrame();
+            frame.setVisible(true);
+        });
+
+        btnEdit.addActionListener(e -> {
+            ModifierFournisseurFrame frame = new ModifierFournisseurFrame();
+            frame.setVisible(true);
+        });
+
+        btnDelete.addActionListener(e -> {
+            SupprimerFournisseurFrame frame = new SupprimerFournisseurFrame();
+            frame.setVisible(true);
+        });
+
+        btnEval.addActionListener(e -> {
+            EvaluerFournisseurFrame frame = new EvaluerFournisseurFrame();
+            frame.setVisible(true);
+        });
+
         return panel;
     }
 
@@ -332,12 +426,19 @@ public class MainFrame extends JFrame {
         panel.add(title, BorderLayout.NORTH);
 
         JPanel btnPanel = new JPanel(new GridLayout(5,1,10,10));
+        btnPanel.setBorder(BorderFactory.createEmptyBorder(30, 200, 30, 200));
 
         JButton btnStock = new JButton("📦 Rapport stock");
         JButton btnCA = new JButton("💵 Chiffre d'affaires");
         JButton btnPerf = new JButton("🏢 Performance fournisseurs");
         JButton btnTop = new JButton("🏆 Top clients");
         JButton btnProd = new JButton("📊 Ventes par produit");
+
+        styleButton(btnStock, new Color(0, 123, 255));
+        styleButton(btnCA, new Color(40, 167, 69));
+        styleButton(btnPerf, new Color(0, 123, 255));
+        styleButton(btnTop, new Color(255, 193, 7));
+        styleButton(btnProd, new Color(108, 117, 125));
 
         btnPanel.add(btnStock);
         btnPanel.add(btnCA);
@@ -346,6 +447,37 @@ public class MainFrame extends JFrame {
         btnPanel.add(btnProd);
 
         panel.add(btnPanel, BorderLayout.CENTER);
+
+        // Actions des boutons
+        btnStock.addActionListener(e -> {
+            interfaces.stock.RapportStockFrame frame = new interfaces.stock.RapportStockFrame();
+            frame.setVisible(true);
+        });
+
+        btnCA.addActionListener(e -> {
+            ChiffresAffairesFrame frame = new ChiffresAffairesFrame();
+            frame.setVisible(true);
+        });
+
+        btnPerf.addActionListener(e -> {
+            PerformanceFournisseursFrame frame = new PerformanceFournisseursFrame();
+            frame.setVisible(true);
+        });
+
+        btnTop.addActionListener(e -> {
+            JOptionPane.showMessageDialog(this,
+                    "Fonctionnalité 'Top clients' en développement",
+                    "Information",
+                    JOptionPane.INFORMATION_MESSAGE);
+        });
+
+        btnProd.addActionListener(e -> {
+            JOptionPane.showMessageDialog(this,
+                    "Fonctionnalité 'Ventes par produit' en développement",
+                    "Information",
+                    JOptionPane.INFORMATION_MESSAGE);
+        });
+
         return panel;
     }
 

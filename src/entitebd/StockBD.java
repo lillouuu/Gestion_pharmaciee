@@ -75,13 +75,48 @@ public class StockBD {
         Connection con = ConnectionBD.getConnection();
         Statement st = con.createStatement();
 
-        String sql = "UPDATE stock_medicament SET quantite_produit = " + nouvelleQuantite +
-                " WHERE ref_medicament = " + refMedicament;
+        try {
+            // Étape 1 : Trouver le num_stock avec la date d'expiration la plus proche
+            String findSql = "SELECT s.num_stock " +
+                    "FROM stock_medicament s " +
+                    "JOIN medicament m ON s.ref_medicament = m.ref_medicament " +
+                    "WHERE s.ref_medicament = " + refMedicament + " " +
+                    "ORDER BY ABS(DATEDIFF(m.date_expiration, CURDATE())) ASC " +
+                    "LIMIT 1";
 
-        int result = st.executeUpdate(sql);
-        st.close();
-        System.out.println("Quantité mise à jour !");
-        return result > 0;
+            ResultSet rs = st.executeQuery(findSql);
+
+            Integer numStock = null;
+            if (rs.next()) {
+                numStock = rs.getInt("num_stock");
+            }
+            rs.close();
+
+            int result;
+
+            if (numStock != null) {
+                // UPDATE : Mettre à jour le lot avec la date d'expiration la plus proche
+                String updateSql = "UPDATE stock_medicament " +
+                        "SET quantite_produit = " + nouvelleQuantite + " " +
+                        "WHERE num_stock = " + numStock;
+                result = st.executeUpdate(updateSql);
+                System.out.println("Quantité mise à jour pour le lot avec expiration la plus proche !");
+            } else {
+                // INSERT : Aucun lot trouvé, créer une nouvelle ligne
+                String insertSql = "INSERT INTO stock_medicament (ref_medicament, quantite_produit) " +
+                        "VALUES (" + refMedicament + ", " + nouvelleQuantite + ")";
+                result = st.executeUpdate(insertSql);
+                System.out.println("Nouvelle ligne créée dans le stock !");
+            }
+
+            st.close();
+            return result > 0;
+
+        } catch (SQLException e) {
+            st.close();
+            System.err.println("Erreur lors de la mise à jour du stock : " + e.getMessage());
+            throw e;
+        }
     }
 
 
