@@ -28,14 +28,14 @@ public class LoginFrame extends JFrame {
 
         JPanel mainPanel = new JPanel();
         mainPanel.setLayout(new GridBagLayout());
-        mainPanel.setBackground(new Color(0xe0d7da));
+        mainPanel.setBackground(new Color(0xf5efeb));
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.insets = new Insets(10, 10, 10, 10);
 
 
         JLabel titleLabel = new JLabel("Système de Gestion de Pharmacie");
         titleLabel.setFont(new Font("Arial", Font.BOLD, 18));
-        titleLabel.setForeground(new Color(0x718bbc));
+        titleLabel.setForeground(new Color(0x718dd9));
         gbc.gridx = 0;
         gbc.gridy = 0;
         gbc.gridwidth = 2;

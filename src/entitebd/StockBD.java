@@ -96,7 +96,6 @@ public class StockBD {
     }
 
 
-
     public void retirerQuantite(int refMedicament, int quantiteDemandee) throws SQLException {
 
         List<StockMedicament> stocks = getStocksParExpiration(refMedicament);

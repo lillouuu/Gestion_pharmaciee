@@ -292,24 +292,21 @@ public class MainFrame extends JFrame {
         title.setForeground(new Color(0x718bbc));
         panel.add(title, BorderLayout.NORTH);
 
-        JPanel btnPanel = new JPanel(new GridLayout(4, 1, 20, 20));
+        JPanel btnPanel = new JPanel(new GridLayout(3, 1, 40, 40));
         btnPanel.setBorder(BorderFactory.createEmptyBorder(50, 150, 50, 150));
 
         JButton btnView = new JButton("👁️ Consulter stock");
 
         JButton btnAjust = new JButton("📦 Ajuster stock");
-        JButton btnSeuil = new JButton("📉 Modifier seuil minimal");
         JButton btnReport = new JButton("📊 Rapport stock");
 
         styleButton(btnView,new Color(0xa3bccf),new Color(0xe0d7da));
-        styleButton(btnAjust, new Color(0xcd7e3),new Color(0x718bbc));
-        styleButton(btnSeuil, new Color(0xeac4d5),new Color(0xa3bccf));
+        styleButton(btnAjust, new Color(0xeac4d5),new Color(0xa3bccf));
         styleButton(btnReport, new Color(0xe0d7da),new Color(0xa3bccf));
 
         btnPanel.add(btnView);
 
         btnPanel.add(btnAjust);
-        btnPanel.add(btnSeuil);
         btnPanel.add(btnReport);
 
         panel.add(btnPanel, BorderLayout.CENTER);

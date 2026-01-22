@@ -40,7 +40,7 @@ public class ImprimerFactureFrame extends JFrame {
         setLayout(new BorderLayout(10, 10));
 
         JPanel topPanel = new JPanel();
-        topPanel.setBackground(new Color(108, 117, 125));
+        topPanel.setBackground(new Color(0X292421));
         topPanel.setPreferredSize(new Dimension(700, 50));
 
         JLabel titleLabel = new JLabel("🧾 Imprimer une Facture");
@@ -62,7 +62,7 @@ public class ImprimerFactureFrame extends JFrame {
         searchPanel.add(txtNumVente);
 
         btnRechercher = new JButton("🔍 Rechercher");
-        btnRechercher.setBackground(new Color(0, 123, 255));
+        btnRechercher.setBackground(new Color(0XBAE0D0));
         btnRechercher.setForeground(Color.WHITE);
         btnRechercher.setFocusPainted(false);
         btnRechercher.addActionListener(e -> rechercherVente());
@@ -90,7 +90,7 @@ public class ImprimerFactureFrame extends JFrame {
 
         btnImprimer = new JButton("🖨 Imprimer");
         btnImprimer.setPreferredSize(new Dimension(140, 35));
-        btnImprimer.setBackground(new Color(40, 167, 69));
+        btnImprimer.setBackground(new Color(100, 137, 99));
         btnImprimer.setForeground(Color.WHITE);
         btnImprimer.setFocusPainted(false);
         btnImprimer.setEnabled(false);
@@ -98,7 +98,7 @@ public class ImprimerFactureFrame extends JFrame {
 
         btnExporter = new JButton("💾 Exporter");
         btnExporter.setPreferredSize(new Dimension(140, 35));
-        btnExporter.setBackground(new Color(255, 165, 0));
+        btnExporter.setBackground(new Color(188, 45, 90));
         btnExporter.setForeground(Color.WHITE);
         btnExporter.setFocusPainted(false);
         btnExporter.setEnabled(false);
@@ -106,7 +106,7 @@ public class ImprimerFactureFrame extends JFrame {
 
         JButton btnFermer = new JButton("❌ Fermer");
         btnFermer.setPreferredSize(new Dimension(140, 35));
-        btnFermer.setBackground(new Color(108, 117, 125));
+        btnFermer.setBackground(new Color(111, 10, 126));
         btnFermer.setForeground(Color.WHITE);
         btnFermer.setFocusPainted(false);
         btnFermer.addActionListener(e -> dispose());

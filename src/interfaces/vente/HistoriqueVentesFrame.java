@@ -41,12 +41,12 @@ public class HistoriqueVentesFrame extends JFrame {
         setLayout(new BorderLayout(10, 10));
 
         JPanel topPanel = new JPanel();
-        topPanel.setBackground(new Color(0, 123, 255));
+        topPanel.setBackground(new Color(0XAABDCF));
         topPanel.setPreferredSize(new Dimension(1200, 50));
 
         JLabel titleLabel = new JLabel("📜 Historique des Ventes");
         titleLabel.setFont(new Font("Arial", Font.BOLD, 18));
-        titleLabel.setForeground(Color.WHITE);
+        titleLabel.setForeground(new Color(0X5C7CB7));
         topPanel.add(titleLabel);
 
         add(topPanel, BorderLayout.NORTH);
@@ -65,13 +65,13 @@ public class HistoriqueVentesFrame extends JFrame {
         JPanel btnPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
 
         JButton btnActualiser = new JButton("🔄 Actualiser");
-        btnActualiser.setBackground(new Color(0, 123, 255));
+        btnActualiser.setBackground(new Color(0X7A958F));
         btnActualiser.setForeground(Color.WHITE);
         btnActualiser.setFocusPainted(false);
         btnActualiser.addActionListener(e -> chargerVentes());
 
         JButton btnFermer = new JButton("Fermer");
-        btnFermer.setBackground(new Color(108, 117, 125));
+        btnFermer.setBackground(new Color(0XCA8E9E));
         btnFermer.setForeground(Color.WHITE);
         btnFermer.setFocusPainted(false);
         btnFermer.addActionListener(e -> dispose());

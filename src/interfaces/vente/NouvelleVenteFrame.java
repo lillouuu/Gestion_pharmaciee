@@ -14,10 +14,18 @@ import java.awt.*;
 import java.sql.SQLException;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
+/**
+ * ✅ VERSION FEFO INTELLIGENTE - CORRIGÉE
+ * - Affiche uniquement le lot avec la date d'expiration la plus proche
+ * - Gère automatiquement le passage aux lots suivants si quantité insuffisante
+ * - FIX: Correction du bug java.sql.Date.toInstant()
+ */
 public class NouvelleVenteFrame extends JFrame {
     private GestionVente gestionVente;
     private ClientBD clientBD;
@@ -30,6 +38,7 @@ public class NouvelleVenteFrame extends JFrame {
     private JSpinner spnQuantite;
     private JTextField txtPrixUnitaire;
     private JTextField txtNumCarteEmp, txtDateVente, txtDateLimite;
+    private JLabel lblStockInfo;
 
     private DefaultTableModel tableModel;
     private JTable tableLignes;
@@ -52,8 +61,8 @@ public class NouvelleVenteFrame extends JFrame {
     }
 
     private void initComponents() {
-        setTitle("Nouvelle Vente");
-        setSize(1100, 750);
+        setTitle("🛒 Nouvelle Vente - FEFO Intelligent");
+        setSize(1100, 800);
         setLocationRelativeTo(null);
         setLayout(new BorderLayout(10, 10));
 
@@ -61,7 +70,7 @@ public class NouvelleVenteFrame extends JFrame {
         topPanel.setBackground(new Color(40, 167, 69));
         topPanel.setPreferredSize(new Dimension(1100, 50));
 
-        JLabel titleLabel = new JLabel("🛒 Nouvelle Vente");
+        JLabel titleLabel = new JLabel("🛒 Nouvelle Vente (FEFO: First Expired, First Out)");
         titleLabel.setFont(new Font("Arial", Font.BOLD, 18));
         titleLabel.setForeground(Color.WHITE);
         topPanel.add(titleLabel);
@@ -154,7 +163,7 @@ public class NouvelleVenteFrame extends JFrame {
         JPanel panel = new JPanel(new BorderLayout(5, 5));
 
         JPanel ajoutPanel = new JPanel(new GridBagLayout());
-        ajoutPanel.setBorder(BorderFactory.createTitledBorder("Ajouter un produit"));
+        ajoutPanel.setBorder(BorderFactory.createTitledBorder("Ajouter un produit (FEFO activé)"));
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.insets = new Insets(5, 5, 5, 5);
         gbc.fill = GridBagConstraints.HORIZONTAL;
@@ -167,11 +176,18 @@ public class NouvelleVenteFrame extends JFrame {
         cmbMedicament.addActionListener(e -> onMedicamentSelected());
         ajoutPanel.add(cmbMedicament, gbc);
 
-        gbc.gridx = 0; gbc.gridy = 1; gbc.gridwidth = 1;
+        gbc.gridx = 0; gbc.gridy = 1; gbc.gridwidth = 3;
+        lblStockInfo = new JLabel(" ");
+        lblStockInfo.setFont(new Font("Arial", Font.ITALIC, 11));
+        lblStockInfo.setForeground(new Color(0, 100, 200));
+        ajoutPanel.add(lblStockInfo, gbc);
+
+        gbc.gridx = 0; gbc.gridy = 2; gbc.gridwidth = 1;
         ajoutPanel.add(new JLabel("Quantité:"), gbc);
 
         gbc.gridx = 1;
         spnQuantite = new JSpinner(new SpinnerNumberModel(1, 1, 1000, 1));
+        spnQuantite.addChangeListener(e -> updateStockInfoOnQuantityChange());
         ajoutPanel.add(spnQuantite, gbc);
 
         gbc.gridx = 2;
@@ -181,7 +197,7 @@ public class NouvelleVenteFrame extends JFrame {
         txtPrixUnitaire = new JTextField("0.0", 10);
         ajoutPanel.add(txtPrixUnitaire, gbc);
 
-        gbc.gridx = 0; gbc.gridy = 2; gbc.gridwidth = 4;
+        gbc.gridx = 0; gbc.gridy = 3; gbc.gridwidth = 4;
         JButton btnAjouter = new JButton("➕ Ajouter à la vente");
         btnAjouter.setBackground(new Color(40, 167, 69));
         btnAjouter.setForeground(Color.WHITE);
@@ -191,7 +207,7 @@ public class NouvelleVenteFrame extends JFrame {
 
         panel.add(ajoutPanel, BorderLayout.NORTH);
 
-        String[] columns = {"Médicament", "Quantité", "Prix Unit.", "Total"};
+        String[] columns = {"Médicament", "Quantité", "Prix Unit.", "Total", "Lots utilisés"};
         tableModel = new DefaultTableModel(columns, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
@@ -239,35 +255,168 @@ public class NouvelleVenteFrame extends JFrame {
         return panel;
     }
 
+    /**
+     * ✅ CORRECTION: Charger uniquement les médicaments avec stock RÉEL > 0
+     */
     private void chargerMedicaments() {
         try {
             List<Medicament> medicaments = medicamentBD.listerTous();
             cmbMedicament.removeAllItems();
 
+            int nbMedicamentsCharges = 0;
+
             for (Medicament med : medicaments) {
-                StockMedicament stock = stockBD.rechercherParRef(med.getRefMedicament());
-                if (stock != null && stock.getQuantiteProduit() > 0 && !med.estPerime()) {
-                    MedicamentItem item = new MedicamentItem(med, stock);
-                    cmbMedicament.addItem(item);
-                    medicamentNoms.put(med.getRefMedicament(), med.getNom());
+                // Ne pas charger les médicaments périmés
+                if (med.estPerime()) {
+                    continue;
+                }
+
+                // ✅ Récupérer les stocks triés par FEFO
+                List<StockMedicament> stocks = stockBD.getStocksParExpiration(med.getRefMedicament());
+
+                if (!stocks.isEmpty()) {
+                    // ✅ Calculer le stock TOTAL réel
+                    int stockTotal = 0;
+                    for (StockMedicament stock : stocks) {
+                        stockTotal += stock.getQuantiteProduit();
+                    }
+
+                    // ✅ N'ajouter que si stock > 0
+                    if (stockTotal > 0) {
+                        MedicamentItem item = new MedicamentItem(med, stocks);
+                        cmbMedicament.addItem(item);
+                        medicamentNoms.put(med.getRefMedicament(), med.getNom());
+                        nbMedicamentsCharges++;
+
+                        System.out.println("✅ " + med.getNom() + " - Stock total: " + stockTotal +
+                                " (" + stocks.size() + " lot(s))");
+                    }
                 }
             }
+
+            System.out.println("📦 " + nbMedicamentsCharges + " médicament(s) chargé(s) avec stock disponible");
+
+            if (nbMedicamentsCharges == 0) {
+                JOptionPane.showMessageDialog(this,
+                        "Aucun médicament en stock disponible pour la vente.",
+                        "Stock vide",
+                        JOptionPane.WARNING_MESSAGE);
+            }
+
         } catch (SQLException e) {
             JOptionPane.showMessageDialog(this,
                     "Erreur lors du chargement des médicaments: " + e.getMessage(),
                     "Erreur", JOptionPane.ERROR_MESSAGE);
+            e.printStackTrace();
         }
     }
 
+    /**
+     * ✅ CORRECTION: Vérifier le stock RÉEL lors de la sélection
+     */
     private void onMedicamentSelected() {
         MedicamentItem selected = (MedicamentItem) cmbMedicament.getSelectedItem();
         if (selected != null) {
-            txtPrixUnitaire.setText(String.valueOf(selected.getStock().getPrixVente()));
+            StockMedicament premierLot = selected.getPremierLot();
+            txtPrixUnitaire.setText(String.valueOf(premierLot.getPrixVente()));
             spnQuantite.setValue(1);
 
-            int max = selected.getStock().getQuantiteProduit();
-            ((SpinnerNumberModel) spnQuantite.getModel()).setMaximum(max);
+            // ✅ Récupérer le stock RÉEL de la BD
+            try {
+                List<StockMedicament> stocksReels = stockBD.getStocksParExpiration(
+                        selected.getMedicament().getRefMedicament()
+                );
+
+                int stockTotal = 0;
+                for (StockMedicament stock : stocksReels) {
+                    stockTotal += stock.getQuantiteProduit();
+                }
+
+                // Limiter le spinner au stock réel
+                if (stockTotal > 0) {
+                    ((SpinnerNumberModel) spnQuantite.getModel()).setMaximum(stockTotal);
+                } else {
+                    ((SpinnerNumberModel) spnQuantite.getModel()).setMaximum(1);
+                }
+
+                System.out.println("📊 Stock réel pour " + selected.getMedicament().getNom() + ": " + stockTotal);
+
+            } catch (SQLException e) {
+                System.err.println("❌ Erreur récupération stock: " + e.getMessage());
+                ((SpinnerNumberModel) spnQuantite.getModel()).setMaximum(1);
+            }
+
+            updateStockInfo(selected, 1);
         }
+    }
+
+    private void updateStockInfoOnQuantityChange() {
+        MedicamentItem selected = (MedicamentItem) cmbMedicament.getSelectedItem();
+        if (selected != null) {
+            int quantite = (Integer) spnQuantite.getValue();
+            updateStockInfo(selected, quantite);
+        }
+    }
+
+    /**
+     * 🔥 MÉTHODE CORRIGÉE - Calcul des jours avant expiration sans toInstant()
+     */
+    private void updateStockInfo(MedicamentItem item, int quantiteDemandee) {
+        List<StockMedicament> stocks = item.getTousLesLots();
+        StringBuilder info = new StringBuilder();
+
+        info.append("📦 FEFO: ");
+
+        int reste = quantiteDemandee;
+        int nbLots = 0;
+
+        for (StockMedicament stock : stocks) {
+            if (reste <= 0) break;
+
+            int qteDisponible = stock.getQuantiteProduit();
+            int qtePrise = Math.min(qteDisponible, reste);
+
+            if (nbLots > 0) info.append(" + ");
+            info.append(qtePrise).append(" du lot #").append(stock.getNumStock());
+
+            // ✅ FIX: Calcul des jours sans toInstant()
+            try {
+                Medicament med = medicamentBD.rechercherParRef(stock.getRefMedicament());
+                if (med != null && med.getDateExpiration() != null) {
+                    long joursAvantExpiration = calculerJoursAvantExpiration(med.getDateExpiration());
+
+                    info.append(" (exp: ").append(joursAvantExpiration).append("j)");
+
+                    if (joursAvantExpiration < 30) {
+                        info.append(" ⚠️");
+                    }
+                }
+            } catch (SQLException e) {
+                // Ignore si erreur de récupération
+            }
+
+            reste -= qtePrise;
+            nbLots++;
+        }
+
+        if (reste > 0) {
+            info.append(" ❌ STOCK INSUFFISANT (manque: ").append(reste).append(")");
+            lblStockInfo.setForeground(Color.RED);
+        } else {
+            info.append(" ✅");
+            lblStockInfo.setForeground(new Color(0, 100, 200));
+        }
+
+        lblStockInfo.setText(info.toString());
+    }
+
+    /**
+     * ✅ NOUVELLE MÉTHODE - Calcul des jours sans utiliser toInstant()
+     */
+    private long calculerJoursAvantExpiration(Date dateExpiration) {
+        Date maintenant = new Date();
+        long differenceMs = dateExpiration.getTime() - maintenant.getTime();
+        return TimeUnit.MILLISECONDS.toDays(differenceMs);
     }
 
     private void rechercherClient() {
@@ -301,6 +450,9 @@ public class NouvelleVenteFrame extends JFrame {
         }
     }
 
+    /**
+     * 🔥 MÉTHODE CRITIQUE - Ajouter une ligne avec vérification RÉELLE du stock
+     */
     private void ajouterLigne() {
         MedicamentItem medItem = (MedicamentItem) cmbMedicament.getSelectedItem();
         if (medItem == null) {
@@ -312,12 +464,48 @@ public class NouvelleVenteFrame extends JFrame {
             int quantite = (Integer) spnQuantite.getValue();
             double prixUnit = Double.parseDouble(txtPrixUnitaire.getText());
 
-            if (quantite > medItem.getStock().getQuantiteProduit()) {
+            // ✅ CORRECTION: Récupérer le stock RÉEL de la base de données
+            int stockReel = 0;
+            try {
+                List<StockMedicament> stocksReels = stockBD.getStocksParExpiration(
+                        medItem.getMedicament().getRefMedicament()
+                );
+
+                for (StockMedicament stock : stocksReels) {
+                    stockReel += stock.getQuantiteProduit();
+                }
+
+                System.out.println("🔍 Vérification stock:");
+                System.out.println("   Médicament: " + medItem.getMedicament().getNom());
+                System.out.println("   Stock réel total: " + stockReel);
+                System.out.println("   Quantité demandée: " + quantite);
+
+            } catch (SQLException e) {
                 JOptionPane.showMessageDialog(this,
-                        "Stock insuffisant! Stock disponible: " + medItem.getStock().getQuantiteProduit(),
+                        "Erreur lors de la vérification du stock: " + e.getMessage(),
                         "Erreur", JOptionPane.ERROR_MESSAGE);
                 return;
             }
+
+            // ✅ Vérification stricte
+            if (quantite > stockReel) {
+                JOptionPane.showMessageDialog(this,
+                        "Stock insuffisant!\n\n" +
+                                "Stock réel disponible: " + stockReel + " unités\n" +
+                                "Quantité demandée: " + quantite + " unités\n\n" +
+                                "⚠️ Veuillez réduire la quantité.",
+                        "Stock épuisé", JOptionPane.ERROR_MESSAGE);
+
+                // Ajuster automatiquement le spinner au maximum disponible
+                if (stockReel > 0) {
+                    spnQuantite.setValue(stockReel);
+                    ((SpinnerNumberModel) spnQuantite.getModel()).setMaximum(stockReel);
+                }
+                return;
+            }
+
+            // ✅ Simuler le FEFO avec les stocks réels
+            String lotsUtilises = simulerFEFO(medItem, quantite);
 
             VoieVente ligne = new VoieVente();
             ligne.setRefMedicament(medItem.getMedicament().getRefMedicament());
@@ -331,17 +519,42 @@ public class NouvelleVenteFrame extends JFrame {
                     medItem.getMedicament().getNom(),
                     quantite,
                     String.format("%.2f DT", prixUnit),
-                    String.format("%.2f DT", ligne.getPrixTotalVoieVente())
+                    String.format("%.2f DT", ligne.getPrixTotalVoieVente()),
+                    lotsUtilises
             });
 
             calculerTotal();
             spnQuantite.setValue(1);
+
+            System.out.println("✅ Ligne ajoutée avec succès");
 
         } catch (NumberFormatException e) {
             JOptionPane.showMessageDialog(this,
                     "Prix unitaire invalide",
                     "Erreur", JOptionPane.ERROR_MESSAGE);
         }
+    }
+
+    private String simulerFEFO(MedicamentItem item, int quantite) {
+        List<StockMedicament> stocks = item.getTousLesLots();
+        StringBuilder result = new StringBuilder();
+
+        int reste = quantite;
+        int nbLots = 0;
+
+        for (StockMedicament stock : stocks) {
+            if (reste <= 0) break;
+
+            int qtePrise = Math.min(stock.getQuantiteProduit(), reste);
+
+            if (nbLots > 0) result.append(", ");
+            result.append(qtePrise).append(" de #").append(stock.getNumStock());
+
+            reste -= qtePrise;
+            nbLots++;
+        }
+
+        return result.toString();
     }
 
     private void calculerTotal() {
@@ -383,7 +596,7 @@ public class NouvelleVenteFrame extends JFrame {
 
             StringBuilder facture = new StringBuilder();
             facture.append("═══════════════════════════════════════\n");
-            facture.append("           FACTURE DE VENTE\n");
+            facture.append("        FACTURE DE VENTE (FEFO)\n");
             facture.append("═══════════════════════════════════════\n\n");
             facture.append("N° Vente: #").append(vente.getNumVente()).append("\n");
             facture.append("Date: ").append(vente.getDateVente()).append("\n\n");
@@ -395,15 +608,21 @@ public class NouvelleVenteFrame extends JFrame {
             }
 
             facture.append("DÉTAILS:\n");
-            for (int i = 0; i < lignesVente.size(); i++) {
-                VoieVente lv = lignesVente.get(i);
-                String nomMed = medicamentNoms.get(lv.getRefMedicament());
-                facture.append("• ").append(nomMed).append(" x").append(lv.getQuantite());
-                facture.append(" = ").append(String.format("%.2f DT", lv.getPrixTotalVoieVente())).append("\n");
+            for (int i = 0; i < tableModel.getRowCount(); i++) {
+                String nom = (String) tableModel.getValueAt(i, 0);
+                int qte = (Integer) tableModel.getValueAt(i, 1);
+                String totalLigne = (String) tableModel.getValueAt(i, 3);
+                String lots = (String) tableModel.getValueAt(i, 4);
+
+                facture.append("• ").append(nom).append(" x").append(qte);
+                facture.append(" = ").append(totalLigne).append("\n");
+                facture.append("  Lots: ").append(lots).append("\n");
             }
 
             facture.append("\nTOTAL: ").append(String.format("%.2f DT", total)).append("\n");
             facture.append("═══════════════════════════════════════\n");
+            facture.append("✅ FEFO appliqué: lots les plus proches\n");
+            facture.append("   de la date d'expiration vendus en premier\n");
 
             JOptionPane.showMessageDialog(this, facture.toString(),
                     "Vente réussie", JOptionPane.INFORMATION_MESSAGE);
@@ -412,8 +631,10 @@ public class NouvelleVenteFrame extends JFrame {
 
         } catch (StockInsuffisantException e) {
             JOptionPane.showMessageDialog(this,
-                    "Stock insuffisant: " + e.getMessage(),
-                    "Erreur", JOptionPane.ERROR_MESSAGE);
+                    "Stock insuffisant:\n" + e.getMessage() + "\n\n" +
+                            "Le système FEFO n'a pas pu trouver assez de stock\n" +
+                            "même en combinant tous les lots disponibles.",
+                    "Erreur FEFO", JOptionPane.ERROR_MESSAGE);
         } catch (ProduitNonTrouveException e) {
             JOptionPane.showMessageDialog(this,
                     "Produit non trouvé: " + e.getMessage(),
@@ -429,27 +650,49 @@ public class NouvelleVenteFrame extends JFrame {
         }
     }
 
-    private static class MedicamentItem {
+    private class MedicamentItem {
         private Medicament medicament;
-        private StockMedicament stock;
+        private List<StockMedicament> tousLesLots;
 
-        public MedicamentItem(Medicament medicament, StockMedicament stock) {
+        public MedicamentItem(Medicament medicament, List<StockMedicament> stocks) {
             this.medicament = medicament;
-            this.stock = stock;
+            this.tousLesLots = stocks;
         }
 
         public Medicament getMedicament() {
             return medicament;
         }
 
-        public StockMedicament getStock() {
-            return stock;
+        public List<StockMedicament> getTousLesLots() {
+            return tousLesLots;
+        }
+
+        public StockMedicament getPremierLot() {
+            return tousLesLots.isEmpty() ? null : tousLesLots.get(0);
+        }
+
+        public int getStockTotal() {
+            int total = 0;
+            for (StockMedicament stock : tousLesLots) {
+                total += stock.getQuantiteProduit();
+            }
+            return total;
         }
 
         @Override
         public String toString() {
-            return medicament.getNom() + " (Stock: " + stock.getQuantiteProduit() +
-                    ", Prix: " + String.format("%.2f DT", stock.getPrixVente()) + ")";
+            StockMedicament premier = getPremierLot();
+            if (premier == null) return medicament.getNom() + " (Stock épuisé)";
+
+            int nbLots = tousLesLots.size();
+            int stockTotal = getStockTotal();
+
+            return medicament.getNom() +
+                    " - Lot #" + premier.getNumStock() +
+                    " (" + premier.getQuantiteProduit() + " unités" +
+                    (nbLots > 1 ? " + " + (nbLots - 1) + " autre(s) lot(s)" : "") +
+                    ", Total: " + stockTotal +
+                    ", Prix: " + String.format("%.2f DT", premier.getPrixVente()) + ")";
         }
     }
 }

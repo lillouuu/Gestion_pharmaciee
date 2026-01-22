@@ -31,12 +31,12 @@ public class PerformanceFournisseursFrame extends JFrame {
 
         // Panel titre
         JPanel topPanel = new JPanel();
-        topPanel.setBackground(new Color(0, 123, 255));
+        topPanel.setBackground(new Color(0xe0a7fa));
         topPanel.setPreferredSize(new Dimension(1000, 50));
 
         JLabel titleLabel = new JLabel("🏢 Performance des Fournisseurs");
         titleLabel.setFont(new Font("Arial", Font.BOLD, 18));
-        titleLabel.setForeground(Color.WHITE);
+        titleLabel.setForeground(new Color(0x5689));
         topPanel.add(titleLabel);
 
         add(topPanel, BorderLayout.NORTH);
@@ -106,21 +106,21 @@ public class PerformanceFournisseursFrame extends JFrame {
 
         btnRefresh = new JButton("🔄 Actualiser");
         btnRefresh.setPreferredSize(new Dimension(140, 35));
-        btnRefresh.setBackground(new Color(0, 123, 255));
+        btnRefresh.setBackground(new Color(0xe0a7fa));
         btnRefresh.setForeground(Color.WHITE);
         btnRefresh.setFocusPainted(false);
         btnRefresh.addActionListener(e -> loadPerformance());
 
         btnExport = new JButton("💾 Exporter");
         btnExport.setPreferredSize(new Dimension(140, 35));
-        btnExport.setBackground(new Color(40, 167, 69));
+        btnExport.setBackground(new Color(50, 111, 200));
         btnExport.setForeground(Color.WHITE);
         btnExport.setFocusPainted(false);
         btnExport.addActionListener(e -> exportRapport());
 
         btnClose = new JButton("❌ Fermer");
         btnClose.setPreferredSize(new Dimension(140, 35));
-        btnClose.setBackground(new Color(108, 117, 125));
+        btnClose.setBackground(new Color(70, 140, 90));
         btnClose.setForeground(Color.WHITE);
         btnClose.setFocusPainted(false);
         btnClose.addActionListener(e -> dispose());
