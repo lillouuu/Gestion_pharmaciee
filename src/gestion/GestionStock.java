@@ -11,27 +11,54 @@ import java.util.List;
 public class GestionStock {
     private StockBD stockBD = new StockBD();
 
-
+    /**
+     * ✅ CORRECTION FEFO: Utilise la méthode retirerQuantite() qui gère automatiquement
+     * la répartition sur plusieurs lots selon FEFO
+     */
     public void diminuerStock(int refMedicament, int quantite)
             throws SQLException, StockInsuffisantException, ProduitNonTrouveException {
 
-        StockMedicament stock = stockBD.rechercherParRef(refMedicament);
+        // ✅ Vérifier d'abord si le médicament existe
+        List<StockMedicament> stocks = stockBD.getStocksParExpiration(refMedicament);
 
-        if (stock == null) {
+        if (stocks == null || stocks.isEmpty()) {
             throw new ProduitNonTrouveException(refMedicament);
         }
 
-        if (stock.getQuantiteProduit() < quantite) {
-            throw new StockInsuffisantException(refMedicament, quantite, stock.getQuantiteProduit());
+        // ✅ Calculer le stock total disponible
+        int stockTotal = 0;
+        for (StockMedicament stock : stocks) {
+            stockTotal += stock.getQuantiteProduit();
         }
 
-        int nouvelleQuantite = stock.getQuantiteProduit() - quantite;
-        stockBD.mettreAJourQuantite(refMedicament, nouvelleQuantite);
+        // ✅ Vérifier si le stock total est suffisant
+        if (stockTotal < quantite) {
+            throw new StockInsuffisantException(refMedicament, quantite, stockTotal);
+        }
 
+        // ✅ Utiliser la méthode FEFO qui gère automatiquement la répartition
+        try {
+            stockBD.retirerQuantite(refMedicament, quantite);
+            System.out.println("✓ Stock diminué avec FEFO pour médicament ref " + refMedicament +
+                    " (-" + quantite + " unités réparties sur les lots)");
 
-        if (nouvelleQuantite <= stock.getSeuilMin()) {
-            System.out.println("⚠️ ALERTE: Stock faible pour médicament ref " + refMedicament +
-                    " (Quantité: " + nouvelleQuantite + ", Seuil: " + stock.getSeuilMin() + ")");
+            // ✅ Vérifier les alertes après la diminution
+            stocks = stockBD.getStocksParExpiration(refMedicament);
+            for (StockMedicament stock : stocks) {
+                if (stock.Alerte()) {
+                    System.out.println("⚠️ ALERTE: Stock faible pour lot #" + stock.getNumStock() +
+                            " du médicament ref " + refMedicament +
+                            " (Quantité: " + stock.getQuantiteProduit() +
+                            ", Seuil: " + stock.getSeuilMin() + ")");
+                }
+            }
+
+        } catch (SQLException e) {
+            // ✅ Convertir l'exception SQL en StockInsuffisantException si nécessaire
+            if (e.getMessage().contains("Stock insuffisant")) {
+                throw new StockInsuffisantException(refMedicament, quantite, stockTotal);
+            }
+            throw e;
         }
     }
 
@@ -103,5 +130,19 @@ public class GestionStock {
         }
 
         return rapport.toString();
+    }
+
+    /**
+     * ✅ NOUVELLE MÉTHODE: Obtenir le stock total disponible pour un médicament
+     */
+    public int obtenirStockTotal(int refMedicament) throws SQLException {
+        List<StockMedicament> stocks = stockBD.getStocksParExpiration(refMedicament);
+        int total = 0;
+
+        for (StockMedicament stock : stocks) {
+            total += stock.getQuantiteProduit();
+        }
+
+        return total;
     }
 }
