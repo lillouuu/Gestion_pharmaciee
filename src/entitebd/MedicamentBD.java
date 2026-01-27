@@ -10,14 +10,10 @@ public class MedicamentBD {
     public int ajouter(Medicament medicament) throws SQLException {
         Connection con = ConnectionBD.getConnection();
         Statement st = con.createStatement();
-
-        // ✅ CORRECTION: Suppression du champ 'prix' qui n'existe pas dans la BD
-        String sql = "INSERT INTO medicament (nom, num_fournisseur, descriptio, date_fabrication, date_expiration) VALUES ('" +
-                medicament.getNom() + "', " +
-                medicament.getNumFournisseur() + ", '" +
-                medicament.getDescriptio() + "', '" +
-                new java.sql.Date(medicament.getDateFabrication().getTime()) + "', '" +
-                new java.sql.Date(medicament.getDateExpiration().getTime()) + "')";
+        String sql = "INSERT INTO medicament (ref_medicament,nom,descriptio) VALUES ('" +
+                medicament.getRefMedicament() + "','" +
+                medicament.getNom() + "', '" +
+                medicament.getDescriptio() + "')";
 
         int result = st.executeUpdate(sql, Statement.RETURN_GENERATED_KEYS);
         int generatedId = -1;
@@ -31,7 +27,7 @@ public class MedicamentBD {
         }
 
         st.close();
-        System.out.println("✅ Médicament ajouté !");
+        System.out.println("Médicament ajouté !");
         return generatedId;
     }
 
@@ -86,62 +82,41 @@ public class MedicamentBD {
         return medicaments;
     }
 
-    public List<Medicament> listerParFournisseur(int numFournisseur) throws SQLException {
-        List<Medicament> medicaments = new ArrayList<>();
-        Connection con = ConnectionBD.getConnection();
-        Statement st = con.createStatement();
-
-        String sql = "SELECT * FROM medicament WHERE num_fournisseur = " + numFournisseur + " ORDER BY nom";
-        ResultSet rs = st.executeQuery(sql);
-
-        while (rs.next()) {
-            medicaments.add(mapResultSetToMedicament(rs));
-        }
-
-        rs.close();
-        st.close();
-        return medicaments;
-    }
+    
 
     public boolean modifier(Medicament medicament) throws SQLException {
         Connection con = ConnectionBD.getConnection();
         Statement st = con.createStatement();
 
-        // ✅ CORRECTION: Suppression du champ 'prix' et correction des guillemets
+        
         String sql = "UPDATE medicament SET " +
                 "nom = '" + medicament.getNom() + "', " +
-                "num_fournisseur = " + medicament.getNumFournisseur() + ", " +
-                "descriptio = '" + medicament.getDescriptio() + "', " +
-                "date_fabrication = '" + new java.sql.Date(medicament.getDateFabrication().getTime()) + "', " +
-                "date_expiration = '" + new java.sql.Date(medicament.getDateExpiration().getTime()) + "' " +
-                "WHERE ref_medicament = " + medicament.getRefMedicament();
+                "descriptio = '" + medicament.getDescriptio() + "', " ;
 
         int result = st.executeUpdate(sql);
         st.close();
-        System.out.println("✅ Médicament modifié !");
+        System.out.println(" Médicament modifié !");
         return result > 0;
     }
 
-    public boolean supprimer(int refMedicament) throws SQLException {
+    public boolean supprimer(string nom) throws SQLException {
         Connection con = ConnectionBD.getConnection();
         Statement st = con.createStatement();
 
-        String sql = "DELETE FROM medicament WHERE ref_medicament = " + refMedicament;
+        String sql = "DELETE FROM medicament WHERE nom = " + nom;
         int result = st.executeUpdate(sql);
 
         st.close();
-        System.out.println("✅ Médicament supprimé !");
+        System.out.println(" Médicament supprimé !");
         return result > 0;
     }
 
     private Medicament mapResultSetToMedicament(ResultSet rs) throws SQLException {
         Medicament med = new Medicament();
-        med.setRefMedicament(rs.getInt("ref_medicament"));
+        med.setRefMedicament(rs.getString("ref_medicament"));
         med.setNom(rs.getString("nom"));
-        med.setNumFournisseur(rs.getInt("num_fournisseur"));
         med.setDescriptio(rs.getString("descriptio"));
-        med.setDateFabrication(rs.getDate("date_fabrication"));
-        med.setDateExpiration(rs.getDate("date_expiration"));
+       
         return med;
     }
 }
