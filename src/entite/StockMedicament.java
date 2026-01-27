@@ -7,6 +7,8 @@ public class StockMedicament {
     private double prixAchat;
     private double prixVente;
     private int seuilMin;
+    private date dateFabrication; 
+    private date dateExpiration; 
     public int getNumStock() {
         return numStock;
     }
@@ -49,6 +51,20 @@ public class StockMedicament {
     public boolean Alerte() {
         return quantiteProduit <= seuilMin;
     }
-
+    public Date getDateFabrication() {
+        return dateFabrication;
+    }
+    public void setDateFabrication(Date dateFabrication) {
+        this.dateFabrication = dateFabrication;
+    }
+    public Date getDateExpiration() {
+        return dateExpiration;
+    }
+    public void setDateExpiration(Date dateExpiration) {
+        this.dateExpiration = dateExpiration;}
+    public boolean estPerime() {
+        if (dateExpiration == null) return false;
+        return new Date().after(dateExpiration);
+    }
 
 }
