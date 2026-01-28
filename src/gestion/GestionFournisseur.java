@@ -55,7 +55,6 @@ public class GestionFournisseur {
             throw new IllegalArgumentException("Fournisseur introuvable: " + numFournisseur);
         }
 
-        // TODO: Vérifier s'il y a des médicaments associés avant de supprimer
 
         return fournisseurBD.supprimer(numFournisseur);
     }

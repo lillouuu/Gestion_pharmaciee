@@ -7,7 +7,7 @@ import java.util.ArrayList;
 
 public class VoieVenteBD {
 
-
+//ajouter nv voie vente
     public void ajouterLigne(VoieVente lv) throws SQLException {
         Connection con = ConnectionBD.getConnection();
         Statement st = con.createStatement();
@@ -56,7 +56,7 @@ public class VoieVenteBD {
         System.out.println("✓ Ligne de vente supprimée");
     }
 
-
+//recupere tous les voie  d'une vente de numVente
     public ArrayList<VoieVente> getLignesParVente(int numVente) throws SQLException {
         ArrayList<VoieVente> lignes = new ArrayList<>();
         Connection con = ConnectionBD.getConnection();
@@ -75,7 +75,7 @@ public class VoieVenteBD {
         return lignes;
     }
 
-
+//recupere voie vente par num
     public VoieVente getLigneById(int idLigneVente) throws SQLException {
         VoieVente lv = null;
         Connection con = ConnectionBD.getConnection();

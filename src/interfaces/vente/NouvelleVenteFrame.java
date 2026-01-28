@@ -13,6 +13,7 @@ import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.sql.SQLException;
+import java.text.SimpleDateFormat;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Date;
@@ -26,6 +27,8 @@ import java.util.concurrent.TimeUnit;
  * - Vérifie le stock TOTAL avant d'ajouter une ligne
  * - Gère automatiquement la répartition sur plusieurs lots
  * - Affiche clairement les lots qui seront utilisés
+ * - ✅ REFACTORED: Dates gérées depuis StockMedicament (pas Medicament)
+ * - ✅ FIXED: Restauration des quantités réservées en cas d'erreur de validation
  */
 public class NouvelleVenteFrame extends JFrame {
     private GestionVente gestionVente;
@@ -52,6 +55,8 @@ public class NouvelleVenteFrame extends JFrame {
 
     // ✅ Tracker pour les quantités déjà ajoutées dans le panier
     private Map<Integer, Integer> quantitesReservees;
+
+    private SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy");
 
     public NouvelleVenteFrame() {
         gestionVente = new GestionVente();
@@ -229,12 +234,28 @@ public class NouvelleVenteFrame extends JFrame {
         scrollPane.setBorder(BorderFactory.createTitledBorder("Lignes de vente"));
         panel.add(scrollPane, BorderLayout.CENTER);
 
+        // ✅ Panel pour le total et le bouton supprimer
+        JPanel bottomPanelProduit = new JPanel(new BorderLayout());
+
+        // Bouton supprimer à gauche
+        JPanel leftPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        JButton btnSupprimerLigne = new JButton("🗑️ Supprimer la ligne sélectionnée");
+        btnSupprimerLigne.setBackground(new Color(220, 53, 69));
+        btnSupprimerLigne.setForeground(Color.WHITE);
+        btnSupprimerLigne.setFocusPainted(false);
+        btnSupprimerLigne.addActionListener(e -> supprimerLigneSelectionnee());
+        leftPanel.add(btnSupprimerLigne);
+        bottomPanelProduit.add(leftPanel, BorderLayout.WEST);
+
+        // Total à droite
         JPanel totalPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
         lblTotal = new JLabel("Total: 0.00 DT");
         lblTotal.setFont(new Font("Arial", Font.BOLD, 16));
         lblTotal.setForeground(new Color(40, 167, 69));
         totalPanel.add(lblTotal);
-        panel.add(totalPanel, BorderLayout.SOUTH);
+        bottomPanelProduit.add(totalPanel, BorderLayout.EAST);
+
+        panel.add(bottomPanelProduit, BorderLayout.SOUTH);
 
         return panel;
     }
@@ -248,6 +269,9 @@ public class NouvelleVenteFrame extends JFrame {
         btnValider.setForeground(Color.WHITE);
         btnValider.setFont(new Font("Arial", Font.BOLD, 14));
         btnValider.setFocusPainted(false);
+        btnValider.setOpaque(true);
+        btnValider.setBorderPainted(false);
+        btnValider.setContentAreaFilled(true);
         btnValider.addActionListener(e -> validerVente());
 
         JButton btnAnnuler = new JButton("❌ Annuler");
@@ -255,6 +279,9 @@ public class NouvelleVenteFrame extends JFrame {
         btnAnnuler.setBackground(new Color(220, 53, 69));
         btnAnnuler.setForeground(Color.WHITE);
         btnAnnuler.setFocusPainted(false);
+        btnAnnuler.setOpaque(true);
+        btnAnnuler.setBorderPainted(false);
+        btnAnnuler.setContentAreaFilled(true);
         btnAnnuler.addActionListener(e -> dispose());
 
         panel.add(btnValider);
@@ -264,7 +291,8 @@ public class NouvelleVenteFrame extends JFrame {
     }
 
     /**
-     * ✅ Charger uniquement les médicaments avec stock TOTAL > 0
+     * ✅ REFACTORED: Charger uniquement les médicaments avec stock TOTAL > 0
+     * Les vérifications de péremption se font au niveau des STOCKS, pas des médicaments
      */
     private void chargerMedicaments() {
         try {
@@ -274,22 +302,31 @@ public class NouvelleVenteFrame extends JFrame {
             int nbMedicamentsCharges = 0;
 
             for (Medicament med : medicaments) {
-                if (med.estPerime()) {
-                    continue;
+                // ✅ Obtenir tous les stocks pour ce médicament
+                List<StockMedicament> stocks = stockBD.getStocksParExpiration(med.getRefMedicament());
+
+                // ✅ Filtrer les stocks périmés
+                List<StockMedicament> stocksValides = new ArrayList<>();
+                for (StockMedicament stock : stocks) {
+                    if (!stock.estPerime()) {
+                        stocksValides.add(stock);
+                    }
                 }
 
-                // ✅ Utiliser GestionStock pour obtenir le stock total
-                int stockTotal = gestionStock.obtenirStockTotal(med.getRefMedicament());
+                // ✅ Calculer le stock total valide
+                int stockTotal = 0;
+                for (StockMedicament stock : stocksValides) {
+                    stockTotal += stock.getQuantiteProduit();
+                }
 
                 if (stockTotal > 0) {
-                    List<StockMedicament> stocks = stockBD.getStocksParExpiration(med.getRefMedicament());
-                    MedicamentItem item = new MedicamentItem(med, stocks);
+                    MedicamentItem item = new MedicamentItem(med, stocksValides);
                     cmbMedicament.addItem(item);
                     medicamentNoms.put(med.getRefMedicament(), med.getNom());
                     nbMedicamentsCharges++;
 
                     System.out.println("✅ " + med.getNom() + " - Stock total: " + stockTotal +
-                            " (" + stocks.size() + " lot(s))");
+                            " (" + stocksValides.size() + " lot(s) valide(s))");
                 }
             }
 
@@ -317,7 +354,9 @@ public class NouvelleVenteFrame extends JFrame {
         MedicamentItem selected = (MedicamentItem) cmbMedicament.getSelectedItem();
         if (selected != null) {
             StockMedicament premierLot = selected.getPremierLot();
-            txtPrixUnitaire.setText(String.valueOf(premierLot.getPrixVente()));
+            if (premierLot != null) {
+                txtPrixUnitaire.setText(String.valueOf(premierLot.getPrixVente()));
+            }
             spnQuantite.setValue(1);
 
             try {
@@ -357,7 +396,7 @@ public class NouvelleVenteFrame extends JFrame {
     }
 
     /**
-     * ✅ Affichage de la répartition FEFO avec gestion des quantités réservées
+     * ✅ REFACTORED: Affichage de la répartition FEFO avec dates depuis StockMedicament
      */
     private void updateStockInfo(MedicamentItem item, int quantiteDemandee) {
         List<StockMedicament> stocks = item.getTousLesLots();
@@ -389,19 +428,15 @@ public class NouvelleVenteFrame extends JFrame {
             if (nbLots > 0) info.append(" + ");
             info.append(qtePrise).append(" du lot #").append(stock.getNumStock());
 
-            try {
-                Medicament med = medicamentBD.rechercherParRef(stock.getRefMedicament());
-                if (med != null && med.getDateExpiration() != null) {
-                    long joursAvantExpiration = calculerJoursAvantExpiration(med.getDateExpiration());
+            // ✅ REFACTORED: Utiliser la date d'expiration du STOCK, pas du médicament
+            if (stock.getDateExpiration() != null) {
+                long joursAvantExpiration = calculerJoursAvantExpiration(stock.getDateExpiration());
 
-                    info.append(" (exp: ").append(joursAvantExpiration).append("j)");
+                info.append(" (exp: ").append(joursAvantExpiration).append("j)");
 
-                    if (joursAvantExpiration < 30) {
-                        info.append(" ⚠️");
-                    }
+                if (joursAvantExpiration < 30) {
+                    info.append(" ⚠️");
                 }
-            } catch (SQLException e) {
-                // Ignore
             }
 
             reste -= qtePrise;
@@ -552,6 +587,9 @@ public class NouvelleVenteFrame extends JFrame {
         }
     }
 
+    /**
+     * ✅ REFACTORED: Simulation FEFO avec dates depuis StockMedicament
+     */
     private String simulerFEFO(MedicamentItem item, int quantite) {
         List<StockMedicament> stocks = item.getTousLesLots();
         StringBuilder result = new StringBuilder();
@@ -567,14 +605,10 @@ public class NouvelleVenteFrame extends JFrame {
             if (nbLots > 0) result.append(", ");
             result.append(qtePrise).append(" de #").append(stock.getNumStock());
 
-            try {
-                Medicament med = medicamentBD.rechercherParRef(stock.getRefMedicament());
-                if (med != null && med.getDateExpiration() != null) {
-                    long jours = calculerJoursAvantExpiration(med.getDateExpiration());
-                    result.append(" (").append(jours).append("j)");
-                }
-            } catch (SQLException e) {
-                // Ignore
+            // ✅ REFACTORED: Utiliser la date d'expiration du STOCK
+            if (stock.getDateExpiration() != null) {
+                long jours = calculerJoursAvantExpiration(stock.getDateExpiration());
+                result.append(" (").append(jours).append("j)");
             }
 
             reste -= qtePrise;
@@ -658,6 +692,9 @@ public class NouvelleVenteFrame extends JFrame {
             dispose();
 
         } catch (StockInsuffisantException e) {
+            // ✅ RESTAURER les quantités réservées en cas d'erreur
+            restaurerQuantitesReservees();
+
             JOptionPane.showMessageDialog(this,
                     "❌ ERREUR FEFO - Stock insuffisant:\n\n" +
                             e.getMessage() + "\n\n" +
@@ -666,20 +703,128 @@ public class NouvelleVenteFrame extends JFrame {
                             "Vérifiez les quantités dans votre panier.",
                     "Erreur FEFO", JOptionPane.ERROR_MESSAGE);
         } catch (ProduitNonTrouveException e) {
+            // ✅ RESTAURER les quantités réservées en cas d'erreur
+            restaurerQuantitesReservees();
+
             JOptionPane.showMessageDialog(this,
                     "Produit non trouvé: " + e.getMessage(),
                     "Erreur", JOptionPane.ERROR_MESSAGE);
         } catch (SQLException e) {
+            // ✅ RESTAURER les quantités réservées en cas d'erreur
+            restaurerQuantitesReservees();
+
             JOptionPane.showMessageDialog(this,
                     "Erreur lors de l'enregistrement: " + e.getMessage(),
                     "Erreur", JOptionPane.ERROR_MESSAGE);
         } catch (NumberFormatException e) {
+            // ✅ RESTAURER les quantités réservées en cas d'erreur
+            restaurerQuantitesReservees();
+
             JOptionPane.showMessageDialog(this,
                     "Numéro de carte employé invalide",
                     "Erreur", JOptionPane.ERROR_MESSAGE);
         }
     }
 
+    /**
+     * ✅ NOUVELLE MÉTHODE: Restaurer les quantités réservées en cas d'erreur
+     * Permet de recalculer les quantités disponibles sans fermer la fenêtre
+     */
+    private void restaurerQuantitesReservees() {
+        System.out.println("⚠️ Erreur de validation - Recalcul des quantités réservées...");
+
+        // Recalculer les quantités réservées depuis le panier actuel
+        quantitesReservees.clear();
+
+        for (VoieVente ligne : lignesVente) {
+            int refMed = ligne.getRefMedicament();
+            int quantite = ligne.getQuantite();
+            int quantiteActuelle = quantitesReservees.getOrDefault(refMed, 0);
+            quantitesReservees.put(refMed, quantiteActuelle + quantite);
+        }
+
+        // Mettre à jour l'affichage si un médicament est sélectionné
+        MedicamentItem selected = (MedicamentItem) cmbMedicament.getSelectedItem();
+        if (selected != null) {
+            onMedicamentSelected();
+        }
+
+        System.out.println("✅ Quantités réservées recalculées depuis le panier");
+    }
+
+    /**
+     * ✅ NOUVELLE MÉTHODE: Supprimer une ligne sélectionnée du panier
+     * Restaure automatiquement les quantités réservées
+     */
+    private void supprimerLigneSelectionnee() {
+        int selectedRow = tableLignes.getSelectedRow();
+
+        if (selectedRow == -1) {
+            JOptionPane.showMessageDialog(this,
+                    "Veuillez sélectionner une ligne à supprimer",
+                    "Aucune sélection", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
+        // Confirmer la suppression
+        String nomMedicament = (String) tableModel.getValueAt(selectedRow, 0);
+        int quantite = (Integer) tableModel.getValueAt(selectedRow, 1);
+
+        int confirm = JOptionPane.showConfirmDialog(this,
+                "Voulez-vous vraiment supprimer cette ligne ?\n\n" +
+                        "Médicament: " + nomMedicament + "\n" +
+                        "Quantité: " + quantite,
+                "Confirmation de suppression",
+                JOptionPane.YES_NO_OPTION,
+                JOptionPane.QUESTION_MESSAGE);
+
+        if (confirm != JOptionPane.YES_OPTION) {
+            return;
+        }
+
+        // Récupérer la référence du médicament avant de supprimer
+        VoieVente ligneASupprimer = lignesVente.get(selectedRow);
+        int refMed = ligneASupprimer.getRefMedicament();
+        int qteALiberer = ligneASupprimer.getQuantite();
+
+        // Supprimer de la liste et du tableau
+        lignesVente.remove(selectedRow);
+        tableModel.removeRow(selectedRow);
+
+        // ✅ Libérer les quantités réservées
+        int quantiteReservee = quantitesReservees.getOrDefault(refMed, 0);
+        int nouvelleReservation = quantiteReservee - qteALiberer;
+
+        if (nouvelleReservation > 0) {
+            quantitesReservees.put(refMed, nouvelleReservation);
+        } else {
+            quantitesReservees.remove(refMed);
+        }
+
+        System.out.println("🗑️ Ligne supprimée:");
+        System.out.println("   Médicament ref: " + refMed);
+        System.out.println("   Quantité libérée: " + qteALiberer);
+        System.out.println("   Nouvelle réservation: " + nouvelleReservation);
+
+        // Recalculer le total
+        calculerTotal();
+
+        // Mettre à jour l'affichage du stock si le même médicament est sélectionné
+        MedicamentItem selected = (MedicamentItem) cmbMedicament.getSelectedItem();
+        if (selected != null && selected.getMedicament().getRefMedicament() == refMed) {
+            onMedicamentSelected();
+        }
+
+        JOptionPane.showMessageDialog(this,
+                "Ligne supprimée avec succès!\n" +
+                        "Stock disponible mis à jour.",
+                "Suppression réussie",
+                JOptionPane.INFORMATION_MESSAGE);
+    }
+
+    /**
+     * ✅ Classe interne pour encapsuler un Medicament avec ses stocks
+     */
     private class MedicamentItem {
         private Medicament medicament;
         private List<StockMedicament> tousLesLots;

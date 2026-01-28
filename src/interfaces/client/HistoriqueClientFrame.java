@@ -106,7 +106,7 @@ public class HistoriqueClientFrame extends JFrame {
         txtCodeCnam.addActionListener(e -> rechercherClient());
         cnamPanel.add(txtCodeCnam, BorderLayout.CENTER);
 
-        JButton btnSearch = new JButton("🔍");
+        JButton btnSearch = new JButton("recherche");
         btnSearch.setFocusPainted(false);
         btnSearch.addActionListener(e -> rechercherClient());
         cnamPanel.add(btnSearch, BorderLayout.EAST);

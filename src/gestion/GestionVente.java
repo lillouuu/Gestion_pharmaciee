@@ -21,17 +21,15 @@ public class GestionVente {
 
     /**
      * Enregistre une vente complète :
-     * 1️⃣ vérifie et diminue le stock (FEFO)
-     * 2️⃣ enregistre la vente
-     * 3️⃣ enregistre les lignes de vente
-     * 4️⃣ met à jour les points fidélité
+     * 1️ vérifie et diminue le stock (FEFO)
+     * 2️ enregistre la vente
+     * 3️ enregistre les lignes de vente
+     * 4️ met à jour les points fidélité
      */
     public void enregistrerVente(Vente v, ArrayList<VoieVente> lignes)
             throws SQLException, StockInsuffisantException, ProduitNonTrouveException {
 
-        // ============================
-        // 1️⃣ DÉBIT DU STOCK (FEFO)
-        // ============================
+
         for (VoieVente lv : lignes) {
             gestionStock.diminuerStock(
                     lv.getRefMedicament(),
@@ -39,23 +37,16 @@ public class GestionVente {
             );
         }
 
-        // ============================
-        // 2️⃣ ENREGISTRER LA VENTE
-        // ============================
         venteBD.ajouterVente(v);
         int numVente = v.getNumVente();
 
-        // ============================
-        // 3️⃣ ENREGISTRER LES LIGNES
-        // ============================
+
         for (VoieVente lv : lignes) {
             lv.setNumVente(numVente);
             ligneventeBD.ajouterLigne(lv);
         }
 
-        // ============================
-        // 4️⃣ POINTS DE FIDÉLITÉ
-        // ============================
+
         if (v.getNumClient() > 0) {
 
             int pointsGagnes = (int) (v.getMontantTotalVente() / 10);
@@ -82,9 +73,8 @@ public class GestionVente {
         );
     }
 
-    // ============================
     // HISTORIQUE CLIENT
-    // ============================
+
     public ArrayList<Vente> obtenirHistoriqueClient(int numClient)
             throws SQLException {
 
@@ -99,9 +89,9 @@ public class GestionVente {
         return historique;
     }
 
-    // ============================
+
     // CHIFFRE D’AFFAIRES
-    // ============================
+
     public double calculerChiffreAffaires() throws SQLException {
 
         ArrayList<Vente> ventes = venteBD.getAllVentes();
@@ -113,9 +103,8 @@ public class GestionVente {
         return total;
     }
 
-    // ============================
+
     // GETTERS / SETTERS
-    // ============================
     public VoieVenteBD getLigneventeBD() {
         return ligneventeBD;
     }

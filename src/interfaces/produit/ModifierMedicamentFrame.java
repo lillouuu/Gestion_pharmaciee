@@ -4,32 +4,34 @@ import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.sql.SQLException;
-import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.Date;
 import java.util.List;
 import entite.Medicament;
 import entite.StockMedicament;
 import entitebd.MedicamentBD;
 import entitebd.StockBD;
+import gestion.GestionProduit;
 
 public class ModifierMedicamentFrame extends JFrame {
     private JTextField txtSearch;
     private JTable tableMedicaments;
     private DefaultTableModel tableModel;
-    private JTextField txtRef, txtNom, txtPrix, txtDateFab, txtDateExp;
-    private JTextField txtQuantite, txtPrixAchat, txtPrixVente, txtSeuilMin;
+
+    // ✅ REFACTORED: Suppression des champs de fournisseur
+    private JTextField txtRef, txtNom;
     private JTextArea txtDescription;
-    private JComboBox<String> cmbFournisseur;
-    private JButton btnSearch, btnUpdate, btnCancel, btnRefresh;
+    private JButton btnSearch, btnUpdate, btnCancel, btnRefresh, btnManageStock;
+
     private MedicamentBD medicamentBD;
     private StockBD stockBD;
+    private GestionProduit gestionProduit;
     private SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy");
     private int currentRefMedicament = -1;
 
     public ModifierMedicamentFrame() {
         medicamentBD = new MedicamentBD();
         stockBD = new StockBD();
+        gestionProduit = new GestionProduit();
         initComponents();
         loadMedicaments();
     }
@@ -75,8 +77,8 @@ public class ModifierMedicamentFrame extends JFrame {
 
         leftPanel.add(searchPanel, BorderLayout.NORTH);
 
-        // Tableau
-        String[] columns = {"Réf", "Nom", "Fournisseur", "Stock", "Prix Vente"};
+        // Tableau - ✅ REFACTORED: Suppression de la colonne Fournisseur
+        String[] columns = {"Réf", "Nom", "Nb Lots", "Stock Total"};
         tableModel = new DefaultTableModel(columns, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
@@ -99,7 +101,6 @@ public class ModifierMedicamentFrame extends JFrame {
         JPanel rightPanel = new JPanel(new BorderLayout());
         rightPanel.setBorder(BorderFactory.createEmptyBorder(10, 5, 10, 10));
 
-        JScrollPane scrollForm = new JScrollPane();
         JPanel formPanel = new JPanel(new GridBagLayout());
         formPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
         GridBagConstraints gbc = new GridBagConstraints();
@@ -118,7 +119,7 @@ public class ModifierMedicamentFrame extends JFrame {
         gbc.gridx = 0; gbc.gridy = 1;
         formPanel.add(new JLabel("Référence:"), gbc);
         gbc.gridx = 1;
-        txtRef = new JTextField(15);
+        txtRef = new JTextField(20);
         txtRef.setEditable(false);
         txtRef.setBackground(new Color(240, 240, 240));
         formPanel.add(txtRef, gbc);
@@ -127,44 +128,16 @@ public class ModifierMedicamentFrame extends JFrame {
         gbc.gridx = 0; gbc.gridy = 2;
         formPanel.add(new JLabel("Nom *:"), gbc);
         gbc.gridx = 1;
-        txtNom = new JTextField(15);
+        txtNom = new JTextField(20);
         formPanel.add(txtNom, gbc);
 
-        // Fournisseur
-        gbc.gridx = 0; gbc.gridy = 3;
-        formPanel.add(new JLabel("Fournisseur *:"), gbc);
-        gbc.gridx = 1;
-        cmbFournisseur = new JComboBox<>(new String[]{"Fournisseur 1", "Fournisseur 2", "Fournisseur 3"});
-        formPanel.add(cmbFournisseur, gbc);
-
-        // Prix
-        gbc.gridx = 0; gbc.gridy = 4;
-        formPanel.add(new JLabel("Prix unitaire *:"), gbc);
-        gbc.gridx = 1;
-        txtPrix = new JTextField(15);
-        formPanel.add(txtPrix, gbc);
-
-        // Date fabrication
-        gbc.gridx = 0; gbc.gridy = 5;
-        formPanel.add(new JLabel("Date fab. *:"), gbc);
-        gbc.gridx = 1;
-        txtDateFab = new JTextField(15);
-        formPanel.add(txtDateFab, gbc);
-
-        // Date expiration
-        gbc.gridx = 0; gbc.gridy = 6;
-        formPanel.add(new JLabel("Date exp. *:"), gbc);
-        gbc.gridx = 1;
-        txtDateExp = new JTextField(15);
-        formPanel.add(txtDateExp, gbc);
-
         // Description
-        gbc.gridx = 0; gbc.gridy = 7;
+        gbc.gridx = 0; gbc.gridy = 3;
         gbc.anchor = GridBagConstraints.NORTHWEST;
         formPanel.add(new JLabel("Description:"), gbc);
         gbc.gridx = 1;
         gbc.gridheight = 2;
-        txtDescription = new JTextArea(3, 15);
+        txtDescription = new JTextArea(4, 20);
         txtDescription.setLineWrap(true);
         txtDescription.setWrapStyleWord(true);
         JScrollPane scrollDesc = new JScrollPane(txtDescription);
@@ -172,73 +145,46 @@ public class ModifierMedicamentFrame extends JFrame {
         gbc.gridheight = 1;
         gbc.anchor = GridBagConstraints.WEST;
 
-        // Section Stock
-        gbc.gridx = 0; gbc.gridy = 9; gbc.gridwidth = 2;
-        gbc.insets = new Insets(15, 5, 5, 5);
-        JLabel lblStock = new JLabel("📦 Gestion du stock");
-        lblStock.setFont(new Font("Arial", Font.BOLD, 12));
-        lblStock.setForeground(new Color(255, 165, 0));
-        formPanel.add(lblStock, gbc);
-        gbc.gridwidth = 1;
+
         gbc.insets = new Insets(5, 5, 5, 5);
+        gbc.gridwidth = 1;
 
-        // Quantité
-        gbc.gridx = 0; gbc.gridy = 10;
-        formPanel.add(new JLabel("Quantité *:"), gbc);
-        gbc.gridx = 1;
-        txtQuantite = new JTextField(15);
-        formPanel.add(txtQuantite, gbc);
-
-        // Prix achat
-        gbc.gridx = 0; gbc.gridy = 11;
-        formPanel.add(new JLabel("Prix achat *:"), gbc);
-        gbc.gridx = 1;
-        txtPrixAchat = new JTextField(15);
-        formPanel.add(txtPrixAchat, gbc);
-
-        // Prix vente
-        gbc.gridx = 0; gbc.gridy = 12;
-        formPanel.add(new JLabel("Prix vente *:"), gbc);
-        gbc.gridx = 1;
-        txtPrixVente = new JTextField(15);
-        formPanel.add(txtPrixVente, gbc);
-
-        // Seuil
-        gbc.gridx = 0; gbc.gridy = 13;
-        formPanel.add(new JLabel("Seuil min *:"), gbc);
-        gbc.gridx = 1;
-        txtSeuilMin = new JTextField(15);
-        formPanel.add(txtSeuilMin, gbc);
-
-        scrollForm.setViewportView(formPanel);
-        rightPanel.add(scrollForm, BorderLayout.CENTER);
+        rightPanel.add(formPanel, BorderLayout.CENTER);
 
         // Boutons
-        JPanel btnPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 10));
+        JPanel btnPanel = new JPanel(new GridLayout(4, 1, 5, 10));
+        btnPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
-        btnUpdate = new JButton("💾 Modifier");
-        btnUpdate.setPreferredSize(new Dimension(120, 35));
+        btnUpdate = new JButton("💾 Modifier Médicament");
         btnUpdate.setBackground(new Color(255, 165, 0));
         btnUpdate.setForeground(Color.WHITE);
         btnUpdate.setFocusPainted(false);
         btnUpdate.setEnabled(false);
         btnUpdate.addActionListener(e -> updateMedicament());
 
+        btnManageStock = new JButton("📦 Gérer les Stocks");
+        btnManageStock.setBackground(new Color(0, 123, 255));
+        btnManageStock.setForeground(Color.WHITE);
+        btnManageStock.setFocusPainted(false);
+        btnManageStock.setEnabled(false);
+        btnManageStock.addActionListener(e -> manageStock());
+
         btnCancel = new JButton("❌ Fermer");
-        btnCancel.setPreferredSize(new Dimension(120, 35));
         btnCancel.setBackground(new Color(108, 117, 125));
         btnCancel.setForeground(Color.WHITE);
         btnCancel.setFocusPainted(false);
         btnCancel.addActionListener(e -> dispose());
 
         btnPanel.add(btnUpdate);
+        btnPanel.add(btnManageStock);
+        btnPanel.add(new JLabel("")); // Spacer
         btnPanel.add(btnCancel);
 
         rightPanel.add(btnPanel, BorderLayout.SOUTH);
 
         // Ajouter les panels au frame
         JSplitPane splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, leftPanel, rightPanel);
-        splitPane.setDividerLocation(500);
+        splitPane.setDividerLocation(600);
         add(splitPane, BorderLayout.CENTER);
     }
 
@@ -247,16 +193,22 @@ public class ModifierMedicamentFrame extends JFrame {
         try {
             List<Medicament> medicaments = medicamentBD.listerTous();
             for (Medicament med : medicaments) {
-                StockMedicament stock = stockBD.rechercherParRef(med.getRefMedicament());
-                String stockQte = stock != null ? String.valueOf(stock.getQuantiteProduit()) : "0";
-                String prixVente = stock != null ? String.format("%.2f DT", stock.getPrixVente()) : "N/A";
+                // ✅ REFACTORED: Obtenir tous les stocks (lots multiples)
+                List<StockMedicament> stocks = stockBD.getStocksParExpiration(med.getRefMedicament());
+                int nbLots = stocks != null ? stocks.size() : 0;
+                int stockTotal = 0;
+
+                if (stocks != null) {
+                    for (StockMedicament stock : stocks) {
+                        stockTotal += stock.getQuantiteProduit();
+                    }
+                }
 
                 tableModel.addRow(new Object[]{
                         med.getRefMedicament(),
                         med.getNom(),
-                        "Fournisseur " + med.getNumFournisseur(),
-                        stockQte,
-                        prixVente
+                        nbLots + " lot(s)",
+                        stockTotal + " unités"
                 });
             }
         } catch (SQLException ex) {
@@ -278,16 +230,21 @@ public class ModifierMedicamentFrame extends JFrame {
         try {
             List<Medicament> medicaments = medicamentBD.rechercherParNom(searchTerm);
             for (Medicament med : medicaments) {
-                StockMedicament stock = stockBD.rechercherParRef(med.getRefMedicament());
-                String stockQte = stock != null ? String.valueOf(stock.getQuantiteProduit()) : "0";
-                String prixVente = stock != null ? String.format("%.2f DT", stock.getPrixVente()) : "N/A";
+                List<StockMedicament> stocks = stockBD.getStocksParExpiration(med.getRefMedicament());
+                int nbLots = stocks != null ? stocks.size() : 0;
+                int stockTotal = 0;
+
+                if (stocks != null) {
+                    for (StockMedicament stock : stocks) {
+                        stockTotal += stock.getQuantiteProduit();
+                    }
+                }
 
                 tableModel.addRow(new Object[]{
                         med.getRefMedicament(),
                         med.getNom(),
-                        "Fournisseur " + med.getNumFournisseur(),
-                        stockQte,
-                        prixVente
+                        nbLots + " lot(s)",
+                        stockTotal + " unités"
                 });
             }
         } catch (SQLException ex) {
@@ -305,30 +262,14 @@ public class ModifierMedicamentFrame extends JFrame {
         try {
             currentRefMedicament = (int) tableModel.getValueAt(selectedRow, 0);
             Medicament med = medicamentBD.rechercherParRef(currentRefMedicament);
-            StockMedicament stock = stockBD.rechercherParRef(currentRefMedicament);
 
             if (med != null) {
                 txtRef.setText(String.valueOf(med.getRefMedicament()));
                 txtNom.setText(med.getNom());
-                cmbFournisseur.setSelectedIndex(med.getNumFournisseur() - 1);
-                //txtPrix.setText(String.valueOf(med.getPrix()));
-                txtDateFab.setText(dateFormat.format(med.getDateFabrication()));
-                txtDateExp.setText(dateFormat.format(med.getDateExpiration()));
                 txtDescription.setText(med.getDescriptio() != null ? med.getDescriptio() : "");
 
-                if (stock != null) {
-                    txtQuantite.setText(String.valueOf(stock.getQuantiteProduit()));
-                    txtPrixAchat.setText(String.valueOf(stock.getPrixAchat()));
-                    txtPrixVente.setText(String.valueOf(stock.getPrixVente()));
-                    txtSeuilMin.setText(String.valueOf(stock.getSeuilMin()));
-                } else {
-                    txtQuantite.setText("0");
-                    txtPrixAchat.setText("");
-                    txtPrixVente.setText("");
-                    txtSeuilMin.setText("10");
-                }
-
                 btnUpdate.setEnabled(true);
+                btnManageStock.setEnabled(true);
             }
         } catch (SQLException ex) {
             JOptionPane.showMessageDialog(this,
@@ -348,68 +289,85 @@ public class ModifierMedicamentFrame extends JFrame {
         }
 
         try {
-            // Validation
-            double prix = Double.parseDouble(txtPrix.getText().trim());
-            int quantite = Integer.parseInt(txtQuantite.getText().trim());
-            double prixAchat = Double.parseDouble(txtPrixAchat.getText().trim());
-            double prixVente = Double.parseDouble(txtPrixVente.getText().trim());
-            int seuilMin = Integer.parseInt(txtSeuilMin.getText().trim());
-            Date dateFab = dateFormat.parse(txtDateFab.getText().trim());
-            Date dateExp = dateFormat.parse(txtDateExp.getText().trim());
-
-            // Créer l'objet Medicament
+            // ✅ REFACTORED: Modifier uniquement les informations du médicament (sans fournisseur)
             Medicament med = new Medicament();
             med.setRefMedicament(currentRefMedicament);
             med.setNom(txtNom.getText().trim());
-            med.setNumFournisseur(cmbFournisseur.getSelectedIndex() + 1);
-            //med.setPrix(prix);
-            med.setDateFabrication(dateFab);
-            med.setDateExpiration(dateExp);
             med.setDescriptio(txtDescription.getText().trim());
 
-            // Mettre à jour le médicament
-            boolean medUpdated = medicamentBD.modifier(med);
+            // Utiliser GestionProduit pour modifier
+            boolean updated = gestionProduit.modifierMedicament(med);
 
-            // Mettre à jour le stock
-            StockMedicament stock = stockBD.rechercherParRef(currentRefMedicament);
-            if (stock != null) {
-                stock.setQuantiteProduit(quantite);
-                stock.setPrixAchat(prixAchat);
-                stock.setPrixVente(prixVente);
-                stock.setSeuilMin(seuilMin);
-                stockBD.modifier(stock);
-            } else {
-                // Créer le stock s'il n'existe pas
-                stock = new StockMedicament();
-                stock.setRefMedicament(currentRefMedicament);
-                stock.setQuantiteProduit(quantite);
-                stock.setPrixAchat(prixAchat);
-                stock.setPrixVente(prixVente);
-                stock.setSeuilMin(seuilMin);
-                stockBD.ajouter(stock);
-            }
-
-            if (medUpdated) {
+            if (updated) {
                 JOptionPane.showMessageDialog(this,
-                        "Médicament modifié avec succès!",
+                        "✅ Médicament modifié avec succès!\n\n" +
+                                "ℹ️ Pour modifier les stocks, utilisez le bouton 'Gérer les Stocks'.",
                         "Succès",
                         JOptionPane.INFORMATION_MESSAGE);
                 loadMedicaments();
             }
 
-        } catch (NumberFormatException ex) {
+        } catch (Exception ex) {
             JOptionPane.showMessageDialog(this,
-                    "Erreur de saisie: vérifiez les nombres!",
+                    "Erreur: " + ex.getMessage(),
                     "Erreur",
                     JOptionPane.ERROR_MESSAGE);
-        } catch (ParseException ex) {
+        }
+    }
+
+    private void manageStock() {
+        if (currentRefMedicament == -1) {
             JOptionPane.showMessageDialog(this,
-                    "Format de date invalide! (jj/mm/aaaa)",
-                    "Erreur",
-                    JOptionPane.ERROR_MESSAGE);
+                    "Veuillez sélectionner un médicament!",
+                    "Validation",
+                    JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
+        try {
+            Medicament med = medicamentBD.rechercherParRef(currentRefMedicament);
+            List<StockMedicament> stocks = stockBD.getStocksParExpiration(currentRefMedicament);
+
+            StringBuilder info = new StringBuilder();
+            info.append("═══════════════════════════════════════\n");
+            info.append("  GESTION DES STOCKS\n");
+            info.append("═══════════════════════════════════════\n\n");
+            info.append("Médicament: ").append(med.getNom()).append("\n");
+            info.append("Référence: ").append(currentRefMedicament).append("\n\n");
+
+            if (stocks == null || stocks.isEmpty()) {
+                info.append("⚠️ Aucun stock disponible.\n");
+                info.append("Les stocks seront créés lors de la réception des commandes.\n");
+            } else {
+                info.append("Nombre de lots: ").append(stocks.size()).append("\n\n");
+                info.append("DÉTAILS DES LOTS:\n");
+                info.append("─────────────────────────────────────\n");
+
+                for (int i = 0; i < stocks.size(); i++) {
+                    StockMedicament stock = stocks.get(i);
+                    info.append("\nLot #").append(i + 1).append(" (Stock #").append(stock.getNumStock()).append(")\n");
+                    info.append("  Quantité: ").append(stock.getQuantiteProduit()).append(" unités\n");
+                    info.append("  Date fab: ").append(dateFormat.format(stock.getDateFabrication())).append("\n");
+                    info.append("  Date exp: ").append(dateFormat.format(stock.getDateExpiration())).append("\n");
+                    info.append("  Prix achat: ").append(String.format("%.2f DT", stock.getPrixAchat())).append("\n");
+                    info.append("  Prix vente: ").append(String.format("%.2f DT", stock.getPrixVente())).append("\n");
+
+                    if (stock.estPerime()) {
+                        info.append("  ⚠️ PÉRIMÉ\n");
+                    } else if (stock.Alerte()) {
+                        info.append("  ⚠️ ALERTE STOCK FAIBLE\n");
+                    }
+                }
+            }
+
+            JOptionPane.showMessageDialog(this,
+                    info.toString(),
+                    "Stocks - " + med.getNom(),
+                    JOptionPane.INFORMATION_MESSAGE);
+
         } catch (SQLException ex) {
             JOptionPane.showMessageDialog(this,
-                    "Erreur BD: " + ex.getMessage(),
+                    "Erreur: " + ex.getMessage(),
                     "Erreur",
                     JOptionPane.ERROR_MESSAGE);
         }

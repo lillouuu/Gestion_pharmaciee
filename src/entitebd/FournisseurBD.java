@@ -5,20 +5,14 @@ import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * ✅ VERSION CORRIGÉE - Gestion complète des fournisseurs
- */
+
 public class FournisseurBD {
 
-    /**
-     * ✅ MÉTHODE CORRIGÉE - Ajouter un fournisseur
-     * Le problème était que num_fournisseur n'était PAS inclus dans l'INSERT
-     */
+  //ajout fournisseur
     public int ajouter(Fournisseur f) throws SQLException {
         Connection con = ConnectionBD.getConnection();
         Statement st = con.createStatement();
 
-        // ✅ CORRECTION PRINCIPALE: Générer un ID si nécessaire
         int numFournisseur = f.getNumFournisseur();
 
         if (numFournisseur <= 0) {
@@ -31,7 +25,6 @@ public class FournisseurBD {
             rsMax.close();
         }
 
-        // ✅ IMPORTANT: Inclure EXPLICITEMENT num_fournisseur dans l'INSERT
         String sql = "INSERT INTO fournisseur (num_fournisseur, nom_fournisseur, adresse, telephone, adresse_mail, rate) " +
                 "VALUES (" +
                 numFournisseur + ", '" +
@@ -47,11 +40,11 @@ public class FournisseurBD {
         st.close();
 
         if (result > 0) {
-            System.out.println("✅ Fournisseur ajouté avec succès! ID: " + numFournisseur);
+            System.out.println(" Fournisseur ajouté avec succès! ID: " + numFournisseur);
             return numFournisseur;
         }
 
-        System.err.println("❌ Échec de l'ajout du fournisseur");
+        System.err.println(" Échec de l'ajout du fournisseur");
         return -1;
     }
 
@@ -122,7 +115,7 @@ public class FournisseurBD {
         st.close();
 
         if (result > 0) {
-            System.out.println("✅ Fournisseur modifié!");
+            System.out.println(" Fournisseur modifié!");
         }
         return result > 0;
     }
@@ -140,13 +133,13 @@ public class FournisseurBD {
         st.close();
 
         if (result > 0) {
-            System.out.println("✅ Fournisseur supprimé!");
+            System.out.println("Fournisseur supprimé!");
         }
         return result > 0;
     }
 
     /**
-     * Calculer la performance d'un fournisseur
+     * Calculer la performance d'un fournisseur performance = (nbCommandes * rate) / 100.0
      */
     public double calculerPerformance(int numFournisseur) throws SQLException {
         Connection con = ConnectionBD.getConnection();

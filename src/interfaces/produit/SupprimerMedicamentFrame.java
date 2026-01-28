@@ -10,6 +10,7 @@ import entite.Medicament;
 import entite.StockMedicament;
 import entitebd.MedicamentBD;
 import entitebd.StockBD;
+import gestion.GestionProduit;
 
 public class SupprimerMedicamentFrame extends JFrame {
     private JTextField txtSearch;
@@ -18,25 +19,27 @@ public class SupprimerMedicamentFrame extends JFrame {
     private JButton btnSearch, btnDelete, btnCancel, btnRefresh;
     private MedicamentBD medicamentBD;
     private StockBD stockBD;
+    private GestionProduit gestionProduit;
     private SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy");
 
     public SupprimerMedicamentFrame() {
         medicamentBD = new MedicamentBD();
         stockBD = new StockBD();
+        gestionProduit = new GestionProduit();
         initComponents();
         loadMedicaments();
     }
 
     private void initComponents() {
         setTitle("Supprimer un Médicament");
-        setSize(1000, 600);
+        setSize(1100, 600);
         setLocationRelativeTo(null);
         setLayout(new BorderLayout(10, 10));
 
         // Panel titre
         JPanel topPanel = new JPanel();
         topPanel.setBackground(new Color(220, 53, 69));
-        topPanel.setPreferredSize(new Dimension(1000, 50));
+        topPanel.setPreferredSize(new Dimension(1100, 50));
 
         JLabel titleLabel = new JLabel("🗑 Supprimer un médicament");
         titleLabel.setFont(new Font("Arial", Font.BOLD, 18));
@@ -71,8 +74,8 @@ public class SupprimerMedicamentFrame extends JFrame {
 
         mainPanel.add(searchPanel, BorderLayout.NORTH);
 
-        // Tableau
-        String[] columns = {"Réf", "Nom", "Fournisseur", "Prix", "Date Fab.", "Date Exp.", "Stock", "Statut"};
+        // Tableau - ✅ REFACTORED: Colonnes adaptées aux lots multiples
+        String[] columns = {"Réf", "Nom",  "Nb Lots", "Stock Total", "Plus Ancien", "Statut"};
         tableModel = new DefaultTableModel(columns, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
@@ -92,7 +95,7 @@ public class SupprimerMedicamentFrame extends JFrame {
         JPanel infoPanel = new JPanel();
         infoPanel.setBackground(new Color(255, 243, 205));
         infoPanel.setBorder(BorderFactory.createLineBorder(new Color(255, 193, 7), 2));
-        JLabel lblInfo = new JLabel("⚠ Attention: La suppression d'un médicament supprimera aussi son stock!");
+        JLabel lblInfo = new JLabel("⚠ Attention: La suppression d'un médicament supprimera aussi TOUS ses stocks (lots)!");
         lblInfo.setFont(new Font("Arial", Font.BOLD, 12));
         lblInfo.setForeground(new Color(133, 100, 4));
         infoPanel.add(lblInfo);
@@ -131,18 +134,31 @@ public class SupprimerMedicamentFrame extends JFrame {
         try {
             List<Medicament> medicaments = medicamentBD.listerTous();
             for (Medicament med : medicaments) {
-                StockMedicament stock = stockBD.rechercherParRef(med.getRefMedicament());
-                String stockQte = stock != null ? String.valueOf(stock.getQuantiteProduit()) : "N/A";
-                String statut = med.estPerime() ? "⚠ PÉRIMÉ" : "✓ Valide";
+
+                List<StockMedicament> stocks = stockBD.getStocksParExpiration(med.getRefMedicament());
+                int nbLots = stocks != null ? stocks.size() : 0;
+                int stockTotal = 0;
+                String plusAncien = "N/A";
+                String statut = "✓ OK";
+
+                if (stocks != null && !stocks.isEmpty()) {
+                    for (StockMedicament stock : stocks) {
+                        stockTotal += stock.getQuantiteProduit();
+                        if (stock.estPerime()) {
+                            statut = "⚠ PÉRIMÉ";
+                        }
+                    }
+
+                    StockMedicament premierStock = stocks.get(0);
+                    plusAncien = dateFormat.format(premierStock.getDateExpiration());
+                }
 
                 tableModel.addRow(new Object[]{
                         med.getRefMedicament(),
                         med.getNom(),
-                        "Fournisseur " + med.getNumFournisseur(),
-                        //String.format("%.2f DT", med.getPrix()),
-                        dateFormat.format(med.getDateFabrication()),
-                        dateFormat.format(med.getDateExpiration()),
-                        stockQte,
+                        nbLots + " lot(s)",
+                        stockTotal + " unités",
+                        plusAncien,
                         statut
                 });
             }
@@ -155,6 +171,7 @@ public class SupprimerMedicamentFrame extends JFrame {
         }
     }
 
+
     private void searchMedicament() {
         String searchTerm = txtSearch.getText().trim();
         if (searchTerm.isEmpty()) {
@@ -166,18 +183,31 @@ public class SupprimerMedicamentFrame extends JFrame {
         try {
             List<Medicament> medicaments = medicamentBD.rechercherParNom(searchTerm);
             for (Medicament med : medicaments) {
-                StockMedicament stock = stockBD.rechercherParRef(med.getRefMedicament());
-                String stockQte = stock != null ? String.valueOf(stock.getQuantiteProduit()) : "N/A";
-                String statut = med.estPerime() ? "⚠ PÉRIMÉ" : "✓ Valide";
+                List<StockMedicament> stocks = stockBD.getStocksParExpiration(med.getRefMedicament());
+                int nbLots = stocks != null ? stocks.size() : 0;
+                int stockTotal = 0;
+                String plusAncien = "N/A";
+                String statut = "✓ OK";
+
+                if (stocks != null && !stocks.isEmpty()) {
+                    for (StockMedicament stock : stocks) {
+                        stockTotal += stock.getQuantiteProduit();
+
+                        if (stock.estPerime()) {
+                            statut = "⚠ PÉRIMÉ";
+                        }
+                    }
+
+                    StockMedicament premierStock = stocks.get(0);
+                    plusAncien = dateFormat.format(premierStock.getDateExpiration());
+                }
 
                 tableModel.addRow(new Object[]{
                         med.getRefMedicament(),
                         med.getNom(),
-                        "Fournisseur " + med.getNumFournisseur(),
-                        //String.format("%.2f DT", med.getPrix()),
-                        dateFormat.format(med.getDateFabrication()),
-                        dateFormat.format(med.getDateExpiration()),
-                        stockQte,
+                        nbLots + " lot(s)",
+                        stockTotal + " unités",
+                        plusAncien,
                         statut
                 });
             }
@@ -209,14 +239,16 @@ public class SupprimerMedicamentFrame extends JFrame {
 
         int refMedicament = (int) tableModel.getValueAt(selectedRow, 0);
         String nomMedicament = (String) tableModel.getValueAt(selectedRow, 1);
-        String stock = (String) tableModel.getValueAt(selectedRow, 6);
+        String nbLots = (String) tableModel.getValueAt(selectedRow, 2);
+        String stockTotal = (String) tableModel.getValueAt(selectedRow, 3);
 
-        // Confirmation
         int confirm = JOptionPane.showConfirmDialog(this,
                 "Êtes-vous sûr de vouloir supprimer ce médicament?\n\n" +
                         "Référence: " + refMedicament + "\n" +
                         "Nom: " + nomMedicament + "\n" +
-                        "Stock actuel: " + stock + "\n\n" +
+                        "Nombre de lots: " + nbLots + "\n" +
+                        "Stock total: " + stockTotal + "\n\n" +
+                        "⚠ Cette action supprimera TOUS les lots de stock!\n" +
                         "⚠ Cette action est irréversible!",
                 "Confirmation de suppression",
                 JOptionPane.YES_NO_OPTION,
@@ -224,20 +256,14 @@ public class SupprimerMedicamentFrame extends JFrame {
 
         if (confirm == JOptionPane.YES_OPTION) {
             try {
-                // Supprimer d'abord le stock (clé étrangère)
-                boolean stockDeleted = stockBD.supprimer(refMedicament);
+                boolean deleted = gestionProduit.supprimerMedicament(refMedicament);
 
-                // Puis supprimer le médicament
-                boolean medDeleted = medicamentBD.supprimer(refMedicament);
-
-                if (medDeleted) {
+                if (deleted) {
                     JOptionPane.showMessageDialog(this,
-                            "Médicament supprimé avec succès!\n" +
-                                    (stockDeleted ? "Stock également supprimé." : ""),
+                            "✅ Médicament supprimé avec succès!\n" +
+                                    "Tous les stocks associés ont également été supprimés.",
                             "Succès",
                             JOptionPane.INFORMATION_MESSAGE);
-
-                    // Rafraîchir le tableau
                     loadMedicaments();
                 } else {
                     JOptionPane.showMessageDialog(this,
@@ -245,13 +271,15 @@ public class SupprimerMedicamentFrame extends JFrame {
                             "Erreur",
                             JOptionPane.ERROR_MESSAGE);
                 }
-            } catch (SQLException ex) {
+
+            } catch (Exception ex) {
                 JOptionPane.showMessageDialog(this,
-                        "Erreur de base de données: " + ex.getMessage(),
-                        "Erreur BD",
+                        "Erreur: " + ex.getMessage(),
+                        "Erreur",
                         JOptionPane.ERROR_MESSAGE);
                 ex.printStackTrace();
             }
         }
     }
+
 }

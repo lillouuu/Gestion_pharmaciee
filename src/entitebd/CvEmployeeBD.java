@@ -3,9 +3,7 @@ package entitebd;
 import entite.CvEmployee;
 import java.sql.*;
 
-/**
- * Classe de gestion des CV d'employés dans la base de données
- */
+
 public class CvEmployeeBD {
 
     /**

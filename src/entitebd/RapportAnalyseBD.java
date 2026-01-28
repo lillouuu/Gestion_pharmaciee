@@ -9,7 +9,6 @@ public class RapportAnalyseBD {
         Connection con = ConnectionBD.getConnection();
         Statement st = con.createStatement();
 
-        // ✅ NOTE: L'ID doit être fourni car il n'est pas auto_increment dans la BD
         String sql = "INSERT INTO rapport_analyse (id, chiffre_affaire, num_carte_emp) VALUES (" +
                 rapport.getId() + ", " +
                 rapport.getChiffreAffaire() + ", " +

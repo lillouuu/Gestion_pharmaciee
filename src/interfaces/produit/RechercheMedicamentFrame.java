@@ -13,7 +13,6 @@ import entitebd.StockBD;
 
 public class RechercheMedicamentFrame extends JFrame {
     private JTextField txtNom, txtRef;
-    private JComboBox<String> cmbFournisseur;
     private JTable tableResultats;
     private DefaultTableModel tableModel;
     private JButton btnSearch, btnClear, btnClose;
@@ -75,16 +74,8 @@ public class RechercheMedicamentFrame extends JFrame {
         txtNom = new JTextField(15);
         searchPanel.add(txtNom, gbc);
 
-        // Fournisseur
-        gbc.gridx = 0; gbc.gridy = 1;
-        searchPanel.add(new JLabel("Fournisseur:"), gbc);
-        gbc.gridx = 1;
-        // TODO: Charger depuis BD
-        cmbFournisseur = new JComboBox<>(new String[]{"Tous", "Fournisseur 1", "Fournisseur 2", "Fournisseur 3"});
-        searchPanel.add(cmbFournisseur, gbc);
-
         // Boutons de recherche
-        gbc.gridx = 2; gbc.gridy = 1; gbc.gridwidth = 2;
+        gbc.gridx = 0; gbc.gridy = 1; gbc.gridwidth = 4;
         JPanel searchBtnPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
 
         btnSearch = new JButton("🔍 Rechercher");
@@ -112,7 +103,8 @@ public class RechercheMedicamentFrame extends JFrame {
         JPanel resultsPanel = new JPanel(new BorderLayout());
         resultsPanel.setBorder(BorderFactory.createTitledBorder("Résultats de recherche"));
 
-        String[] columns = {"Réf", "Nom", "Fournisseur", "Prix", "Stock", "Prix Vente", "Date Exp.", "Statut"};
+        // ✅ REFACTORED: Colonnes adaptées (suppression fournisseur)
+        String[] columns = {"Réf", "Nom", "Nb Lots", "Stock Total", "Plus Ancien Lot"};
         tableModel = new DefaultTableModel(columns, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
@@ -123,7 +115,7 @@ public class RechercheMedicamentFrame extends JFrame {
         tableResultats.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         tableResultats.setRowHeight(25);
         tableResultats.getColumnModel().getColumn(0).setPreferredWidth(50);
-        tableResultats.getColumnModel().getColumn(1).setPreferredWidth(200);
+        tableResultats.getColumnModel().getColumn(1).setPreferredWidth(250);
 
         tableResultats.getSelectionModel().addListSelectionListener(e -> {
             if (!e.getValueIsAdjusting() && tableResultats.getSelectedRow() != -1) {
@@ -178,9 +170,8 @@ public class RechercheMedicamentFrame extends JFrame {
 
         String ref = txtRef.getText().trim();
         String nom = txtNom.getText().trim();
-        int fournisseurIndex = cmbFournisseur.getSelectedIndex();
 
-        if (ref.isEmpty() && nom.isEmpty() && fournisseurIndex == 0) {
+        if (ref.isEmpty() && nom.isEmpty()) {
             JOptionPane.showMessageDialog(this,
                     "Veuillez saisir au moins un critère de recherche!",
                     "Recherche",
@@ -211,32 +202,34 @@ public class RechercheMedicamentFrame extends JFrame {
             else if (!nom.isEmpty()) {
                 medicaments = medicamentBD.rechercherParNom(nom);
             }
-            // Recherche par fournisseur
-            else if (fournisseurIndex > 0) {
-                medicaments = medicamentBD.listerParFournisseur(fournisseurIndex);
-            }
 
             if (medicaments != null && !medicaments.isEmpty()) {
                 for (Medicament med : medicaments) {
-                    // Filtrer par fournisseur si spécifié avec nom
-                    if (fournisseurIndex > 0 && med.getNumFournisseur() != fournisseurIndex) {
-                        continue;
-                    }
+                    // ✅ REFACTORED: Obtenir tous les stocks (lots multiples)
+                    List<StockMedicament> stocks = stockBD.getStocksParExpiration(med.getRefMedicament());
+                    int nbLots = stocks != null ? stocks.size() : 0;
+                    int stockTotal = 0;
+                    String plusAncienLot = "N/A";
 
-                    StockMedicament stock = stockBD.rechercherParRef(med.getRefMedicament());
-                    String stockQte = stock != null ? String.valueOf(stock.getQuantiteProduit()) : "N/A";
-                    String prixVente = stock != null ? String.format("%.2f DT", stock.getPrixVente()) : "N/A";
-                    String statut = med.estPerime() ? "⚠ PÉRIMÉ" : "✓ Valide";
+                    if (stocks != null && !stocks.isEmpty()) {
+                        for (StockMedicament stock : stocks) {
+                            stockTotal += stock.getQuantiteProduit();
+                        }
+                        // Le premier stock est le plus ancien (FEFO)
+                        StockMedicament premierStock = stocks.get(0);
+                        plusAncienLot = dateFormat.format(premierStock.getDateExpiration());
+
+                        if (premierStock.estPerime()) {
+                            plusAncienLot += " ⚠️";
+                        }
+                    }
 
                     tableModel.addRow(new Object[]{
                             med.getRefMedicament(),
                             med.getNom(),
-                            "Fournisseur " + med.getNumFournisseur(),
-                            //String.format("%.2f DT", med.getPrix()),
-                            stockQte,
-                            prixVente,
-                            dateFormat.format(med.getDateExpiration()),
-                            statut
+                            nbLots + " lot(s)",
+                            stockTotal + " unités",
+                            plusAncienLot
                     });
                 }
 
@@ -264,7 +257,7 @@ public class RechercheMedicamentFrame extends JFrame {
         try {
             int refMed = (int) tableModel.getValueAt(selectedRow, 0);
             Medicament med = medicamentBD.rechercherParRef(refMed);
-            StockMedicament stock = stockBD.rechercherParRef(refMed);
+            List<StockMedicament> stocks = stockBD.getStocksParExpiration(refMed);
 
             if (med != null) {
                 StringBuilder details = new StringBuilder();
@@ -275,30 +268,64 @@ public class RechercheMedicamentFrame extends JFrame {
                 details.append("📋 MÉDICAMENT\n");
                 details.append("  • Référence       : ").append(med.getRefMedicament()).append("\n");
                 details.append("  • Nom             : ").append(med.getNom()).append("\n");
-                details.append("  • Fournisseur     : Fournisseur ").append(med.getNumFournisseur()).append("\n");
-                //details.append("  • Prix unitaire   : ").append(String.format("%.2f DT", med.getPrix())).append("\n");
-                details.append("  • Date fabrication: ").append(dateFormat.format(med.getDateFabrication())).append("\n");
-                details.append("  • Date expiration : ").append(dateFormat.format(med.getDateExpiration())).append("\n");
                 details.append("  • Description     : ").append(med.getDescriptio() != null ? med.getDescriptio() : "N/A").append("\n\n");
 
-                if (stock != null) {
-                    details.append("📦 STOCK\n");
-                    details.append("  • Quantité en stock: ").append(stock.getQuantiteProduit()).append("\n");
-                    details.append("  • Prix d'achat     : ").append(String.format("%.2f DT", stock.getPrixAchat())).append("\n");
-                    details.append("  • Prix de vente    : ").append(String.format("%.2f DT", stock.getPrixVente())).append("\n");
-                    details.append("  • Seuil minimal    : ").append(stock.getSeuilMin()).append("\n");
-                    details.append("  • Marge bénéficiaire: ").append(String.format("%.2f DT", stock.getPrixVente() - stock.getPrixAchat())).append("\n");
+                // ✅ REFACTORED: Afficher tous les lots de stock
+                if (stocks != null && !stocks.isEmpty()) {
+                    details.append("📦 STOCKS (").append(stocks.size()).append(" lot(s))\n");
+                    details.append("───────────────────────────────────────────────────────────\n\n");
 
-                    if (stock.Alerte()) {
-                        details.append("\n  ⚠ ALERTE: Stock faible! (Quantité ≤ seuil minimal)\n");
+                    int stockTotal = 0;
+                    double valeurTotale = 0;
+                    boolean hasAlerts = false;
+                    boolean hasExpired = false;
+
+                    for (int i = 0; i < stocks.size(); i++) {
+                        StockMedicament stock = stocks.get(i);
+                        stockTotal += stock.getQuantiteProduit();
+                        valeurTotale += stock.getQuantiteProduit() * stock.getPrixVente();
+
+                        details.append("LOT #").append(i + 1).append(" (Stock #").append(stock.getNumStock()).append(")\n");
+                        details.append("  • Quantité         : ").append(stock.getQuantiteProduit()).append(" unités\n");
+                        details.append("  • Date fabrication : ").append(dateFormat.format(stock.getDateFabrication())).append("\n");
+                        details.append("  • Date expiration  : ").append(dateFormat.format(stock.getDateExpiration()));
+
+                        if (stock.estPerime()) {
+                            details.append(" ⚠️ PÉRIMÉ");
+                            hasExpired = true;
+                        }
+                        details.append("\n");
+
+                        details.append("  • Prix d'achat     : ").append(String.format("%.2f DT", stock.getPrixAchat())).append("\n");
+                        details.append("  • Prix de vente    : ").append(String.format("%.2f DT", stock.getPrixVente())).append("\n");
+                        details.append("  • Seuil minimal    : ").append(stock.getSeuilMin()).append(" unités\n");
+                        details.append("  • Marge unitaire   : ").append(String.format("%.2f DT", stock.getPrixVente() - stock.getPrixAchat())).append("\n");
+
+                        if (stock.Alerte() && !stock.estPerime()) {
+                            details.append("  ⚠️ ALERTE: Stock faible! (Quantité ≤ seuil minimal)\n");
+                            hasAlerts = true;
+                        }
+
+                        details.append("\n");
                     }
+
+                    // Résumé
+                    details.append("───────────────────────────────────────────────────────────\n");
+                    details.append("RÉSUMÉ\n");
+                    details.append("  • Stock total      : ").append(stockTotal).append(" unités\n");
+                    details.append("  • Valeur totale    : ").append(String.format("%.2f DT", valeurTotale)).append("\n");
+
+                    if (hasExpired) {
+                        details.append("\n⚠️ ATTENTION: Un ou plusieurs lots sont PÉRIMÉS!\n");
+                    }
+                    if (hasAlerts) {
+                        details.append("⚠️ ALERTE: Un ou plusieurs lots ont un stock faible!\n");
+                    }
+
                 } else {
                     details.append("📦 STOCK\n");
-                    details.append("  • Pas d'information de stock disponible\n");
-                }
-
-                if (med.estPerime()) {
-                    details.append("\n⚠ ATTENTION: Ce médicament est PÉRIMÉ!\n");
+                    details.append("  • Aucun stock disponible\n");
+                    details.append("  • Les stocks seront créés lors de la réception des commandes\n");
                 }
 
                 txtDetails.setText(details.toString());
@@ -312,7 +339,6 @@ public class RechercheMedicamentFrame extends JFrame {
     private void clearSearch() {
         txtRef.setText("");
         txtNom.setText("");
-        cmbFournisseur.setSelectedIndex(0);
         tableModel.setRowCount(0);
         txtDetails.setText("");
         txtRef.requestFocus();

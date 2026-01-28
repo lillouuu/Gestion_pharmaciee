@@ -14,55 +14,30 @@ public class GestionProduit {
     private StockBD stockBD = new StockBD();
 
     /**
-     * Ajouter un médicament avec son stock initial
+     * ✅ REFACTORED: Ajouter un médicament SANS créer de stock
+     * Le stock sera créé séparément lors de la réception des commandes
      * @return La référence du médicament créé
      */
-    public int ajouterMedicament(Medicament medicament, StockMedicament stock)
+    public int ajouterMedicament(Medicament medicament)
             throws SQLException, IllegalArgumentException {
 
-        // Validations métier
+        // Validations métier (sans dates)
         validerMedicament(medicament);
-        validerStock(stock);
-
-        // Vérifier que le médicament n'est pas périmé
-        if (medicament.estPerime()) {
-            throw new IllegalArgumentException(
-                    "Impossible d'ajouter un médicament déjà périmé! Date expiration: " +
-                            medicament.getDateExpiration()
-            );
-        }
 
         // Ajouter le médicament
         int refMedicament = medicamentBD.ajouter(medicament);
 
         if (refMedicament > 0) {
-            try {
-                // Créer le stock associé
-                stock.setRefMedicament(refMedicament);
-                int numStock = stockBD.ajouter(stock);
-
-                if (numStock > 0) {
-                    System.out.println("✓ Médicament et stock créés avec succès (ref: " + refMedicament + ")");
-                    return refMedicament;
-                } else {
-                    // Rollback: supprimer le médicament si le stock n'a pas pu être créé
-                    medicamentBD.supprimer(refMedicament);
-                    throw new SQLException("Échec de la création du stock");
-                }
-            } catch (SQLException e) {
-                // Rollback en cas d'erreur
-                medicamentBD.supprimer(refMedicament);
-                throw e;
-            }
+            System.out.println("✓ Médicament créé avec succès (ref: " + refMedicament + ")");
+            System.out.println("  Note: Le stock sera créé lors de la réception des commandes");
+            return refMedicament;
         }
 
         throw new SQLException("Échec de la création du médicament");
     }
 
-    /**
-     * Modifier un médicament et son stock
-     */
-    public boolean modifierMedicament(Medicament medicament, StockMedicament stock)
+
+    public boolean modifierMedicament(Medicament medicament)
             throws SQLException, ProduitNonTrouveException, IllegalArgumentException {
 
         // Vérifier que le médicament existe
@@ -73,31 +48,19 @@ public class GestionProduit {
 
         // Validations
         validerMedicament(medicament);
-        validerStock(stock);
 
         // Mettre à jour le médicament
-        boolean medUpdated = medicamentBD.modifier(medicament);
+        boolean updated = medicamentBD.modifier(medicament);
 
-        if (medUpdated) {
-            // Mettre à jour ou créer le stock
-            StockMedicament existingStock = stockBD.rechercherParRef(medicament.getRefMedicament());
-
-            if (existingStock != null) {
-                stock.setNumStock(existingStock.getNumStock());
-                stock.setRefMedicament(medicament.getRefMedicament());
-                return stockBD.modifier(stock);
-            } else {
-                // Créer le stock s'il n'existe pas
-                stock.setRefMedicament(medicament.getRefMedicament());
-                return stockBD.ajouter(stock) > 0;
-            }
+        if (updated) {
+            System.out.println("✓ Médicament modifié (ref: " + medicament.getRefMedicament() + ")");
         }
 
-        return false;
+        return updated;
     }
 
     /**
-     * Supprimer un médicament et son stock
+     * ✅ REFACTORED: Supprimer un médicament et tous ses stocks associés
      */
     public boolean supprimerMedicament(int refMedicament)
             throws SQLException, ProduitNonTrouveException {
@@ -108,18 +71,26 @@ public class GestionProduit {
             throw new ProduitNonTrouveException(refMedicament);
         }
 
-        // Vérifier s'il y a du stock
-        StockMedicament stock = stockBD.rechercherParRef(refMedicament);
-        if (stock != null && stock.getQuantiteProduit() > 0) {
-            throw new IllegalStateException(
-                    "Impossible de supprimer un médicament avec du stock restant! " +
-                            "Quantité actuelle: " + stock.getQuantiteProduit()
-            );
-        }
+        // ✅ Vérifier s'il y a du stock (peut avoir plusieurs lots)
+        List<StockMedicament> stocks = stockBD.getStocksParExpiration(refMedicament);
+        int stockTotal = 0;
 
-        // Supprimer d'abord le stock (clé étrangère)
-        if (stock != null) {
-            stockBD.supprimer(refMedicament);
+        if (stocks != null && !stocks.isEmpty()) {
+            for (StockMedicament stock : stocks) {
+                stockTotal += stock.getQuantiteProduit();
+            }
+
+            if (stockTotal > 0) {
+                throw new IllegalStateException(
+                        "Impossible de supprimer un médicament avec du stock restant! " +
+                                "Quantité totale: " + stockTotal + " unités dans " + stocks.size() + " lot(s)"
+                );
+            }
+
+            // Supprimer tous les stocks (même vides)
+            for (StockMedicament stock : stocks) {
+                stockBD.supprimerParNumStock(stock.getNumStock());
+            }
         }
 
         // Puis supprimer le médicament
@@ -133,9 +104,9 @@ public class GestionProduit {
     }
 
     /**
-     * Rechercher un médicament par référence avec son stock
+     * ✅ REFACTORED: Rechercher un médicament par référence avec tous ses stocks
      */
-    public MedicamentAvecStock rechercherMedicamentComplet(int refMedicament)
+    public MedicamentAvecStocks rechercherMedicamentComplet(int refMedicament)
             throws SQLException, ProduitNonTrouveException {
 
         Medicament med = medicamentBD.rechercherParRef(refMedicament);
@@ -143,8 +114,8 @@ public class GestionProduit {
             throw new ProduitNonTrouveException(refMedicament);
         }
 
-        StockMedicament stock = stockBD.rechercherParRef(refMedicament);
-        return new MedicamentAvecStock(med, stock);
+        List<StockMedicament> stocks = stockBD.getStocksParExpiration(refMedicament);
+        return new MedicamentAvecStocks(med, stocks);
     }
 
     /**
@@ -167,46 +138,47 @@ public class GestionProduit {
     /**
      * Lister les médicaments d'un fournisseur
      */
-    public List<Medicament> listerParFournisseur(int numFournisseur) throws SQLException {
-        if (numFournisseur <= 0) {
-            throw new IllegalArgumentException("Numéro de fournisseur invalide");
-        }
-        return medicamentBD.listerParFournisseur(numFournisseur);
-    }
 
     /**
-     * Obtenir les médicaments périmés
+     * ✅ REFACTORED: Obtenir les stocks périmés (dates maintenant dans StockMedicament)
      */
-    public List<Medicament> obtenirMedicamentsPerimes() throws SQLException {
-        List<Medicament> tous = medicamentBD.listerTous();
+    public List<StockMedicament> obtenirStocksPerimes() throws SQLException {
+        List<StockMedicament> tous = stockBD.listerTous();
         return tous.stream()
-                .filter(Medicament::estPerime)
+                .filter(StockMedicament::estPerime)
                 .collect(java.util.stream.Collectors.toList());
     }
 
     /**
-     * Obtenir les médicaments proches de l'expiration (moins de 30 jours)
+     * ✅ REFACTORED: Obtenir les stocks proches de l'expiration (moins de X jours)
      */
-    public List<Medicament> obtenirMedicamentsProchesExpiration(int joursAvant) throws SQLException {
-        List<Medicament> tous = medicamentBD.listerTous();
+    public List<StockMedicament> obtenirStocksProchesExpiration(int joursAvant) throws SQLException {
+        List<StockMedicament> tous = stockBD.listerTous();
         Date now = new Date();
         long millisParJour = 24 * 60 * 60 * 1000;
         long seuilMillis = now.getTime() + (joursAvant * millisParJour);
 
         return tous.stream()
-                .filter(med -> {
-                    if (med.getDateExpiration() == null) return false;
-                    return med.getDateExpiration().getTime() <= seuilMillis
-                            && !med.estPerime();
+                .filter(stock -> {
+                    if (stock.getDateExpiration() == null) return false;
+                    return stock.getDateExpiration().getTime() <= seuilMillis
+                            && !stock.estPerime();
                 })
                 .collect(java.util.stream.Collectors.toList());
     }
 
     /**
-     * Calculer le nombre total de médicaments
+     * Calculer le nombre total de médicaments (distincts)
      */
     public int compterMedicaments() throws SQLException {
         return medicamentBD.listerTous().size();
+    }
+
+    /**
+     * ✅ NOUVEAU: Calculer le nombre total de lots en stock
+     */
+    public int compterLotsStock() throws SQLException {
+        return stockBD.listerTous().size();
     }
 
     /**
@@ -235,23 +207,8 @@ public class GestionProduit {
         }
 
 
-        if (med.getNumFournisseur() <= 0) {
-            throw new IllegalArgumentException("Le fournisseur est obligatoire");
-        }
-
-        if (med.getDateFabrication() == null) {
-            throw new IllegalArgumentException("La date de fabrication est obligatoire");
-        }
-
-        if (med.getDateExpiration() == null) {
-            throw new IllegalArgumentException("La date d'expiration est obligatoire");
-        }
-
-        if (med.getDateExpiration().before(med.getDateFabrication())) {
-            throw new IllegalArgumentException(
-                    "La date d'expiration doit être après la date de fabrication"
-            );
-        }
+        // ✅ REFACTORED: Plus de validation de dates ici - elles sont maintenant dans le stock
+        // Les dates seront validées lors de la création du stock
     }
 
     private void validerStock(StockMedicament stock) throws IllegalArgumentException {
@@ -278,10 +235,30 @@ public class GestionProduit {
         if (stock.getPrixVente() < stock.getPrixAchat()) {
             System.out.println("⚠ Attention: Le prix de vente est inférieur au prix d'achat!");
         }
+
+        // ✅ REFACTORED: Validation des dates (maintenant dans le stock)
+        if (stock.getDateFabrication() == null) {
+            throw new IllegalArgumentException("La date de fabrication est obligatoire");
+        }
+
+        if (stock.getDateExpiration() == null) {
+            throw new IllegalArgumentException("La date d'expiration est obligatoire");
+        }
+
+        if (stock.getDateExpiration().before(stock.getDateFabrication())) {
+            throw new IllegalArgumentException(
+                    "La date d'expiration doit être après la date de fabrication"
+            );
+        }
     }
 
-    // ============ CLASSE INTERNE POUR RETOURNER MÉDICAMENT + STOCK ============
+    // ============ CLASSE INTERNE POUR RETOURNER MÉDICAMENT + STOCK(S) ============
 
+    /**
+     * ✅ ANCIENNE CLASSE (conservée pour compatibilité avec code existant)
+     * @deprecated Utiliser MedicamentAvecStocks à la place
+     */
+    @Deprecated
     public static class MedicamentAvecStock {
         private Medicament medicament;
         private StockMedicament stock;
@@ -312,7 +289,91 @@ public class GestionProduit {
         }
 
         public boolean estPerime() {
-            return medicament != null && medicament.estPerime();
+            // ✅ REFACTORED: Vérifie maintenant le stock au lieu du médicament
+            return stock != null && stock.estPerime();
+        }
+    }
+
+    /**
+     * ✅ NOUVELLE CLASSE: Un médicament peut avoir plusieurs stocks (lots)
+     * Cette classe représente mieux la réalité d'un système de gestion de pharmacie
+     */
+    public static class MedicamentAvecStocks {
+        private Medicament medicament;
+        private List<StockMedicament> stocks;
+
+        public MedicamentAvecStocks(Medicament medicament, List<StockMedicament> stocks) {
+            this.medicament = medicament;
+            this.stocks = stocks;
+        }
+
+        public Medicament getMedicament() {
+            return medicament;
+        }
+
+        public List<StockMedicament> getStocks() {
+            return stocks;
+        }
+
+        public boolean aStock() {
+            return stocks != null && !stocks.isEmpty() && getQuantiteStockTotal() > 0;
+        }
+
+        public int getQuantiteStockTotal() {
+            if (stocks == null || stocks.isEmpty()) return 0;
+            return stocks.stream()
+                    .mapToInt(StockMedicament::getQuantiteProduit)
+                    .sum();
+        }
+
+        public int getNombreLots() {
+            return stocks != null ? stocks.size() : 0;
+        }
+
+        public boolean estEnAlerte() {
+            if (stocks == null || stocks.isEmpty()) return false;
+            return stocks.stream().anyMatch(StockMedicament::Alerte);
+        }
+
+        public boolean aStockPerime() {
+            if (stocks == null || stocks.isEmpty()) return false;
+            return stocks.stream().anyMatch(StockMedicament::estPerime);
+        }
+
+        public StockMedicament getStockLePlusAncien() {
+            if (stocks == null || stocks.isEmpty()) return null;
+            // Les stocks sont déjà triés par date d'expiration (FEFO)
+            return stocks.get(0);
+        }
+
+        /**
+         * Obtenir le premier stock non périmé (FEFO - First Expired, First Out)
+         */
+        public StockMedicament getPremierStockValide() {
+            if (stocks == null || stocks.isEmpty()) return null;
+            return stocks.stream()
+                    .filter(s -> !s.estPerime())
+                    .findFirst()
+                    .orElse(null);
+        }
+
+        /**
+         * Vérifier si tous les stocks sont périmés
+         */
+        public boolean tousStocksPerimes() {
+            if (stocks == null || stocks.isEmpty()) return false;
+            return stocks.stream().allMatch(StockMedicament::estPerime);
+        }
+
+        /**
+         * Obtenir la quantité totale non périmée
+         */
+        public int getQuantiteNonPerimee() {
+            if (stocks == null || stocks.isEmpty()) return 0;
+            return stocks.stream()
+                    .filter(s -> !s.estPerime())
+                    .mapToInt(StockMedicament::getQuantiteProduit)
+                    .sum();
         }
     }
 }

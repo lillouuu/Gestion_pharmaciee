@@ -9,7 +9,7 @@ import java.util.List;
 
 public class EmployeBD {
 
-
+// recuperation d'un employer ayant numCNSS et mdp dans la base : verifier son existance dans la base
     public Employe authentifier(int numCNSS, String motDePasse) throws SQLException {
         Connection con = ConnectionBD.getConnection();
         Statement st = con.createStatement();
@@ -33,7 +33,7 @@ public class EmployeBD {
         return emp;
     }
 
-
+// ajout d'un employer a la base de donnes
     public int ajouter(Employe emp) throws SQLException {
         Connection con = ConnectionBD.getConnection();
         Statement st = con.createStatement();
@@ -66,7 +66,7 @@ public class EmployeBD {
         return generatedId;
     }
 
-
+//lister tous les employees
     public List<Employe> listerTous() throws SQLException {
         List<Employe> employes = new ArrayList<>();
         Connection con = ConnectionBD.getConnection();
@@ -89,7 +89,7 @@ public class EmployeBD {
         return employes;
     }
 
-
+//modifier employer
     public boolean modifier(Employe emp) throws SQLException {
         Connection con = ConnectionBD.getConnection();
         Statement st = con.createStatement();
@@ -112,7 +112,7 @@ public class EmployeBD {
         return result > 0;
     }
 
-
+//supprimer un employee
     public boolean supprimer(int numCarteEmp) throws SQLException {
         Connection con = ConnectionBD.getConnection();
         Statement st = con.createStatement();
@@ -124,7 +124,7 @@ public class EmployeBD {
         System.out.println("✓ Employé supprimé");
         return result > 0;
     }
-
+//recherche d'un employer par son num de carte
     public Employe rechercherParId(int numCarteEmp) throws SQLException {
         Connection con = ConnectionBD.getConnection();
         Statement st = con.createStatement();

@@ -132,7 +132,6 @@ public class GestionCommande {
         // Récupérer les lignes de commande
         ArrayList<VoieCommande> lignes = voieCommandeBD.getLignesParCommande(numCommande);
 
-        // ✅ NOUVEAU: Créer une nouvelle ligne de stock pour chaque ligne de commande
         StockBD stockBD = new StockBD();
         MedicamentBD medicamentBD = new MedicamentBD();
 
@@ -179,10 +178,7 @@ public class GestionCommande {
                 lignes.size() + " lignes de commande");
     }
 
-    /**
-     * ANCIENNE MÉTHODE - Conservée pour compatibilité mais DÉCONSEILLÉE
-     * @deprecated Utilisez plutôt la réception manuelle dans l'interface
-     */
+
     @Deprecated
     public void receptionnerCommande(int numCommande, int numCarteEmp)
             throws SQLException {

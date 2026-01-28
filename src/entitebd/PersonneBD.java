@@ -8,10 +8,7 @@ package entitebd;
 import entite.Personne;
 import java.sql.*;
 
-/**
- * Classe pour gérer les opérations sur la table Personne
- * ✅ Cette classe est compatible avec la gestion des Clients ET des Employés
- */
+
 public class PersonneBD {
 
     /**
@@ -115,8 +112,3 @@ public class PersonneBD {
     }
 }
 
-// ℹ️ NOTE IMPORTANTE:
-// Cette classe est déjà présente dans votre projet et fonctionne
-// avec la gestion des clients. Ne la modifiez pas !
-// La classe GestionEmploye a été adaptée pour utiliser
-// la méthode rechercherParNumCarte() au lieu de rechercherParId().

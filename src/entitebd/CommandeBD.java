@@ -5,7 +5,7 @@ import java.sql.*;
 import java.util.ArrayList;
 
 public class CommandeBD {
-
+    /* ajout d'une commande*/
     public void ajouterCommande(Commande c) throws SQLException {
         Connection con = ConnectionBD.getConnection();
         Statement st = con.createStatement();
@@ -27,9 +27,9 @@ public class CommandeBD {
         }
         rs.close();
         st.close();
-        System.out.println("✅ Commande ajoutée avec ID: " + c.getNumCommande());
+        System.out.println(" Commande ajoutée avec ID: " + c.getNumCommande());
     }
-
+    // recupere commande par num
     public Commande getCommandeById(int numCommande) throws SQLException {
         Commande c = null;
         Connection con = ConnectionBD.getConnection();
@@ -46,12 +46,11 @@ public class CommandeBD {
         st.close();
         return c;
     }
-
+// modifier une commande
     public void modifierCommande(Commande c) throws SQLException {
         Connection con = ConnectionBD.getConnection();
         Statement st = con.createStatement();
 
-        // ✅ CORRECTION: Ajout de la virgule manquante après montant_total_commande
         String sql = "UPDATE commande SET " +
                 "statut = '" + c.getStatut() + "', " +
                 "montant_total_commande = " + c.getMontantTotalCommande() + ", " +
@@ -63,7 +62,7 @@ public class CommandeBD {
 
         st.executeUpdate(sql);
         st.close();
-        System.out.println("✅ Commande modifiée");
+        System.out.println(" Commande modifiée");
     }
 
     public void modifierStatut(int numCommande, String statut) throws SQLException {
@@ -73,9 +72,9 @@ public class CommandeBD {
         String sql = "UPDATE commande SET statut = '" + statut + "' WHERE num_commande = " + numCommande;
         st.executeUpdate(sql);
         st.close();
-        System.out.println("✅ Statut de la commande modifié");
+        System.out.println(" Statut de la commande modifié");
     }
-
+//recuperation de tous les commandes dans un arrayList de commandes
     public ArrayList<Commande> afficherToutesCommandes() throws SQLException {
         ArrayList<Commande> commandes = new ArrayList<>();
         Connection con = ConnectionBD.getConnection();

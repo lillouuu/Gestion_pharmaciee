@@ -88,7 +88,7 @@ public class RechercheClientFrame extends JFrame {
         searchPanel.add(txtSearch, gbc);
 
         gbc.gridx = 2;
-        btnSearch = new JButton("🔍 Rechercher");
+        btnSearch = new JButton("Rechercher");
         btnSearch.setBackground(new Color(0, 123, 255));
         btnSearch.setForeground(Color.WHITE);
         btnSearch.setFocusPainted(false);
@@ -104,7 +104,7 @@ public class RechercheClientFrame extends JFrame {
         searchPanel.add(txtCodeCnam, gbc);
 
         gbc.gridx = 2;
-        btnSearchCnam = new JButton("🔍 Rechercher");
+        btnSearchCnam = new JButton("Rechercher");
         btnSearchCnam.setBackground(new Color(0, 123, 255));
         btnSearchCnam.setForeground(Color.WHITE);
         btnSearchCnam.setFocusPainted(false);
@@ -309,14 +309,14 @@ public class RechercheClientFrame extends JFrame {
                 details.append("  • Prénom            : ").append(client.getPrenom()).append("\n");
                 details.append("  • Âge               : ").append(client.getAge()).append(" ans\n\n");
 
-                details.append("📞 CONTACT\n");
+                details.append("  CONTACT\n");
                 details.append("  • Téléphone         : ").append(client.getTelephone()).append("\n");
                 details.append("  • Email             : ").append(
                         client.getAdresseMail() != null ? client.getAdresseMail() : "N/A").append("\n");
                 details.append("  • Adresse           : ").append(
                         client.getAdresse() != null ? client.getAdresse() : "N/A").append("\n\n");
 
-                details.append("⭐ FIDÉLITÉ\n");
+                details.append("  FIDÉLITÉ\n");
                 details.append("  • Points            : ").append(client.getPointFidelite()).append("\n");
                 details.append("  • Code CNAM         : ").append(
                         client.getCodeCnam() != null ? client.getCodeCnam() : "N/A").append("\n");

@@ -5,12 +5,11 @@ import java.sql.*;
 import java.util.ArrayList;
 
 public class VenteBD {
-
+// ajouter nouvelle vente
     public void ajouterVente(Vente v) throws SQLException {
         Connection con = ConnectionBD.getConnection();
         Statement st = con.createStatement();
 
-        // ✅ CORRECTION: Utilisation de montant_total_vente (nom correct dans la BD)
         String sql = "INSERT INTO vente (date_vente, date_lim_rendre_produit, montant_total_vente, num_client, num_emp) VALUES ('" +
                 v.getDateVente() + "', '" +
                 v.getDateLimRendreProduit() + "', " +
@@ -29,7 +28,7 @@ public class VenteBD {
 
         System.out.println("✅ Vente ajoutée avec ID: " + v.getNumVente());
     }
-
+//modifier vente
     public void modifierVente(Vente v) throws SQLException {
         Connection con = ConnectionBD.getConnection();
         Statement st = con.createStatement();
@@ -47,7 +46,7 @@ public class VenteBD {
         st.close();
         System.out.println("✅ Vente modifiée");
     }
-
+//modifier montant total
     public void modifierMontantTotal(int numVente, double montantTotal) throws SQLException {
         Connection con = ConnectionBD.getConnection();
         Statement st = con.createStatement();
@@ -59,7 +58,7 @@ public class VenteBD {
         st.close();
         System.out.println("✅ Montant total modifié");
     }
-
+// get vente par num
     public Vente getVenteById(int numVente) throws SQLException {
         Vente v = null;
         Connection con = ConnectionBD.getConnection();
@@ -76,7 +75,7 @@ public class VenteBD {
         st.close();
         return v;
     }
-
+//lister toutes les ventes
     public ArrayList<Vente> getAllVentes() throws SQLException {
         ArrayList<Vente> ventes = new ArrayList<>();
         Connection con = ConnectionBD.getConnection();
@@ -99,7 +98,6 @@ public class VenteBD {
         v.setNumVente(rs.getInt("num_vente"));
         v.setDateVente(rs.getString("date_vente"));
         v.setDateLimRendreProduit(rs.getString("date_lim_rendre_produit"));
-        // ✅ CORRECTION: Utilisation de montant_total_vente
         v.setMontantTotalVente(rs.getDouble("montant_total_vente"));
         v.setNumClient(rs.getInt("num_client"));
         v.setNumEmp(rs.getInt("num_emp"));

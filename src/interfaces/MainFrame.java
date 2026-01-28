@@ -123,6 +123,9 @@ public class MainFrame extends JFrame {
         btn.setFont(new Font("Arial", Font.BOLD, 18));
         btn.setFocusPainted(false);
         btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        btn.setOpaque(true);
+        btn.setBorderPainted(false);
+        btn.setContentAreaFilled(true);
     }
 
     private JPanel createVentePanel() {

@@ -1,4 +1,6 @@
 package entite;
+import java.util.Date;
+
 
 public class StockMedicament {
     private int numStock;
@@ -7,6 +9,25 @@ public class StockMedicament {
     private double prixAchat;
     private double prixVente;
     private int seuilMin;
+    private Date dateExpiration;
+
+    private Date dateFabrication;
+
+    public Date getDateFabrication() {
+        return dateFabrication;
+    }
+
+    public void setDateFabrication(Date dateFabrication) {
+        this.dateFabrication = dateFabrication;
+    }
+
+    public Date getDateExpiration() {
+        return dateExpiration;
+    }
+
+    public void setDateExpiration(Date dateExpriration) {
+        this.dateExpiration = dateExpriration;
+    }
     public int getNumStock() {
         return numStock;
     }
@@ -48,6 +69,10 @@ public class StockMedicament {
     }
     public boolean Alerte() {
         return quantiteProduit <= seuilMin;
+    }
+    public boolean estPerime() {
+        if (dateExpiration == null) return false;
+        return new Date().after(dateExpiration);
     }
 
 

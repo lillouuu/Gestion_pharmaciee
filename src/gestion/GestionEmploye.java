@@ -81,7 +81,7 @@ public class GestionEmploye {
                 cvBD.ajouter(cv);
             }
 
-            System.out.println("✅ Employé ajouté avec succès (Carte Emp: " + numCarteEmp + ")");
+            System.out.println(" Employé ajouté avec succès (Carte Emp: " + numCarteEmp + ")");
             return numCarteEmp;
 
         } catch (SQLException e) {

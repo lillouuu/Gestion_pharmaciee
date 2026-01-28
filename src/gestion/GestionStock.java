@@ -11,38 +11,34 @@ import java.util.List;
 public class GestionStock {
     private StockBD stockBD = new StockBD();
 
-    /**
-     * ✅ CORRECTION FEFO: Utilise la méthode retirerQuantite() qui gère automatiquement
-     * la répartition sur plusieurs lots selon FEFO
-     */
     public void diminuerStock(int refMedicament, int quantite)
             throws SQLException, StockInsuffisantException, ProduitNonTrouveException {
 
-        // ✅ Vérifier d'abord si le médicament existe
+        //  Vérifier d'abord si le médicament existe
         List<StockMedicament> stocks = stockBD.getStocksParExpiration(refMedicament);
 
         if (stocks == null || stocks.isEmpty()) {
             throw new ProduitNonTrouveException(refMedicament);
         }
 
-        // ✅ Calculer le stock total disponible
+        // Calculer le stock total disponible
         int stockTotal = 0;
         for (StockMedicament stock : stocks) {
             stockTotal += stock.getQuantiteProduit();
         }
 
-        // ✅ Vérifier si le stock total est suffisant
+        //  Vérifier si le stock total est suffisant
         if (stockTotal < quantite) {
             throw new StockInsuffisantException(refMedicament, quantite, stockTotal);
         }
 
-        // ✅ Utiliser la méthode FEFO qui gère automatiquement la répartition
+        //  Utiliser la méthode FEFO first expired first out qui gère automatiquement la répartition
         try {
             stockBD.retirerQuantite(refMedicament, quantite);
             System.out.println("✓ Stock diminué avec FEFO pour médicament ref " + refMedicament +
                     " (-" + quantite + " unités réparties sur les lots)");
 
-            // ✅ Vérifier les alertes après la diminution
+            //  Vérifier les alertes après la diminution
             stocks = stockBD.getStocksParExpiration(refMedicament);
             for (StockMedicament stock : stocks) {
                 if (stock.Alerte()) {
@@ -54,7 +50,7 @@ public class GestionStock {
             }
 
         } catch (SQLException e) {
-            // ✅ Convertir l'exception SQL en StockInsuffisantException si nécessaire
+            //  Convertir l'exception SQL en StockInsuffisantException si nécessaire
             if (e.getMessage().contains("Stock insuffisant")) {
                 throw new StockInsuffisantException(refMedicament, quantite, stockTotal);
             }
@@ -83,7 +79,7 @@ public class GestionStock {
         return stockBD.getProduitsEnAlerte();
     }
 
-
+// verifier si un medicament est en alerte
     public boolean estEnAlerte(int refMedicament) throws SQLException, ProduitNonTrouveException {
         StockMedicament stock = stockBD.rechercherParRef(refMedicament);
 
@@ -133,7 +129,7 @@ public class GestionStock {
     }
 
     /**
-     * ✅ NOUVELLE MÉTHODE: Obtenir le stock total disponible pour un médicament
+     *  Obtenir le stock total disponible pour un médicament
      */
     public int obtenirStockTotal(int refMedicament) throws SQLException {
         List<StockMedicament> stocks = stockBD.getStocksParExpiration(refMedicament);

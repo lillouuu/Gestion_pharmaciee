@@ -27,7 +27,7 @@ public class CreerCommandeFrame extends JFrame {
     private JTextField txtImpots;
     private JTextField txtDateAchat;
     private JTextField txtDateLimite;
-    private JComboBox<Integer> cmbFournisseur;
+    private JComboBox<FournisseurItem> cmbFournisseur;
     private JTextField txtNumCarteEmp;
 
     private DefaultTableModel tableModel;
@@ -91,17 +91,18 @@ public class CreerCommandeFrame extends JFrame {
 
         // Fournisseur
         gbc.gridx = 0; gbc.gridy = 1;
-        panel.add(new JLabel("Fournisseur:"), gbc);
+        panel.add(new JLabel("Fournisseur *:"), gbc);
 
-        gbc.gridx = 1;
+        gbc.gridx = 1; gbc.gridwidth = 3;
         cmbFournisseur = new JComboBox<>();
         panel.add(cmbFournisseur, gbc);
+        gbc.gridwidth = 1;
 
         // Numéro carte employé
-        gbc.gridx = 2;
+        gbc.gridx = 0; gbc.gridy = 2;
         panel.add(new JLabel("Num Carte Emp:"), gbc);
 
-        gbc.gridx = 3;
+        gbc.gridx = 1;
         txtNumCarteEmp = new JTextField("1", 15);
         panel.add(txtNumCarteEmp, gbc);
 
@@ -243,7 +244,7 @@ public class CreerCommandeFrame extends JFrame {
             cmbFournisseur.removeAllItems();
 
             for (Fournisseur f : fournisseurs) {
-                cmbFournisseur.addItem(f.getNumFournisseur());
+                cmbFournisseur.addItem(new FournisseurItem(f));
             }
         } catch (SQLException e) {
             JOptionPane.showMessageDialog(this,
@@ -257,9 +258,11 @@ public class CreerCommandeFrame extends JFrame {
         if (selected != null) {
             try {
                 StockBD stockBD = new StockBD();
-                StockMedicament stock = stockBD.rechercherParRef(selected.getMedicament().getRefMedicament());
-                if (stock != null) {
-                    txtPrixUnitaire.setText(String.valueOf(stock.getPrixAchat()));
+                // ✅ REFACTORED: Obtenir le premier stock (peut y avoir plusieurs lots)
+                List<StockMedicament> stocks = stockBD.getStocksParExpiration(selected.getMedicament().getRefMedicament());
+                if (stocks != null && !stocks.isEmpty()) {
+                    // Prendre le prix d'achat du premier lot disponible
+                    txtPrixUnitaire.setText(String.valueOf(stocks.get(0).getPrixAchat()));
                 } else {
                     txtPrixUnitaire.setText("0.0");
                 }
@@ -270,10 +273,10 @@ public class CreerCommandeFrame extends JFrame {
     }
 
     /**
-     * Dialogue pour ajouter un nouveau médicament
+     * ✅ REFACTORED: Dialogue pour ajouter un nouveau médicament (SANS fournisseur, SANS dates)
+     * Les dates seront ajoutées lors de la réception de la commande dans le stock
      */
     private void ajouterNouveauMedicament() {
-
         String nom = JOptionPane.showInputDialog(
                 this,
                 "Entrez le nom du médicament :",
@@ -287,32 +290,15 @@ public class CreerCommandeFrame extends JFrame {
         }
 
         try {
-            // Vérifier qu’un fournisseur est sélectionné
-            if (cmbFournisseur.getSelectedItem() == null) {
-                JOptionPane.showMessageDialog(this,
-                        "Veuillez sélectionner un fournisseur avant d'ajouter un médicament",
-                        "Attention",
-                        JOptionPane.WARNING_MESSAGE);
-                return;
-            }
-
-            int numFournisseur = (Integer) cmbFournisseur.getSelectedItem();
-
-            // Création du médicament (SANS stock)
+            // ✅ REFACTORED: Création du médicament SANS fournisseur et SANS dates
             Medicament med = new Medicament();
             med.setNom(nom.trim());
             med.setDescriptio(""); // description vide
-            med.setNumFournisseur(numFournisseur);
-            med.setDateFabrication(new Date());
-            med.setDateExpiration(
-                    java.sql.Date.valueOf(LocalDate.now().plusYears(2))
-            );
 
-            // Insertion UNIQUEMENT dans la table medicament
+            // ✅ Insertion UNIQUEMENT du nom et description
             int refMedicament = medicamentBD.ajouter(med);
 
             if (refMedicament > 0) {
-
                 med.setRefMedicament(refMedicament);
 
                 // Recharger la liste des médicaments
@@ -328,7 +314,9 @@ public class CreerCommandeFrame extends JFrame {
                 }
 
                 JOptionPane.showMessageDialog(this,
-                        "✅ Médicament ajouté dans la base",
+                        "✅ Médicament ajouté dans la base!\n\n" +
+                                "ℹ️ Les stocks seront créés lors de la réception de la commande.\n" +
+                                "Les dates de fabrication et d'expiration seront saisies à ce moment.",
                         "Succès",
                         JOptionPane.INFORMATION_MESSAGE);
             }
@@ -341,7 +329,6 @@ public class CreerCommandeFrame extends JFrame {
             e.printStackTrace();
         }
     }
-
 
     private void ajouterLigne() {
         try {
@@ -401,11 +388,20 @@ public class CreerCommandeFrame extends JFrame {
             return;
         }
 
+        // ✅ REFACTORED: Vérifier qu'un fournisseur est sélectionné
+        FournisseurItem fournisseurItem = (FournisseurItem) cmbFournisseur.getSelectedItem();
+        if (fournisseurItem == null) {
+            JOptionPane.showMessageDialog(this,
+                    "Veuillez sélectionner un fournisseur!",
+                    "Attention", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
         try {
             Commande commande = new Commande();
             commande.setDateAchat(txtDateAchat.getText());
             commande.setDateLimRendreProduit(txtDateLimite.getText());
-            commande.setNumFournisseur((Integer) cmbFournisseur.getSelectedItem());
+            commande.setNumFournisseur(fournisseurItem.getFournisseur().getNumFournisseur());
             commande.setNumCarteEmp(Integer.parseInt(txtNumCarteEmp.getText()));
 
             int numCommande = gestionCommande.creerCommande(commande, lignesCommande);
@@ -413,15 +409,17 @@ public class CreerCommandeFrame extends JFrame {
             GestionCommande.BilanCommande bilan = gestionCommande.obtenirBilanCommande(numCommande);
 
             StringBuilder sb = new StringBuilder();
-            sb.append("═══════════════════════════════\n");
-            sb.append("     BILAN DE LA COMMANDE\n");
-            sb.append("═══════════════════════════════\n\n");
+            sb.append("═══════════════════════════════════════\n");
+            sb.append("       BILAN DE LA COMMANDE\n");
+            sb.append("═══════════════════════════════════════\n\n");
             sb.append("Numéro Commande: #").append(numCommande).append("\n");
+            sb.append("Fournisseur: ").append(fournisseurItem.getFournisseur().getNomFournisseur()).append("\n");
             sb.append("Date d'achat: ").append(bilan.getCommande().getDateAchat()).append("\n");
             sb.append("Statut: ").append(bilan.getCommande().getStatut()).append("\n");
             sb.append("Nombre de lignes: ").append(bilan.getNombreLignes()).append("\n");
             sb.append("Total: ").append(String.format("%.2f DT", bilan.getTotal())).append("\n");
-            sb.append("\n═══════════════════════════════\n");
+            sb.append("\n═══════════════════════════════════════\n");
+            sb.append("ℹ️ Les stocks seront créés lors de la réception\n");
 
             JOptionPane.showMessageDialog(this, sb.toString(),
                     "Commande Créée", JOptionPane.INFORMATION_MESSAGE);
@@ -439,6 +437,9 @@ public class CreerCommandeFrame extends JFrame {
         }
     }
 
+    /**
+     * Classe interne pour encapsuler un Medicament dans le JComboBox
+     */
     private static class MedicamentItem {
         private Medicament medicament;
 
@@ -453,6 +454,27 @@ public class CreerCommandeFrame extends JFrame {
         @Override
         public String toString() {
             return medicament.getRefMedicament() + " - " + medicament.getNom();
+        }
+    }
+
+    /**
+     * ✅ NEW: Classe interne pour encapsuler un Fournisseur dans le JComboBox
+     */
+    private static class FournisseurItem {
+        private Fournisseur fournisseur;
+
+        public FournisseurItem(Fournisseur fournisseur) {
+            this.fournisseur = fournisseur;
+        }
+
+        public Fournisseur getFournisseur() {
+            return fournisseur;
+        }
+
+        @Override
+        public String toString() {
+            return fournisseur.getNumFournisseur() + " - " + fournisseur.getNomFournisseur() +
+                    " (" + fournisseur.getTelephone() + ")";
         }
     }
 }

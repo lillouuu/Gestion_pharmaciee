@@ -220,6 +220,7 @@ public class ReceptionnerCommandeFrame extends JFrame {
     }
 
     private void chargerCommande() {
+
         try {
             int numCommande = Integer.parseInt(txtNumCommande.getText().trim());
 
@@ -253,6 +254,20 @@ public class ReceptionnerCommandeFrame extends JFrame {
             }
 
             txtInfoCommande.setText(sb.toString());
+// Vérifier si réceptionnable
+            if ("Reçue".equals(commandeActuelle.getStatut())) {
+                sb.append("\n⚠️ Cette commande est déjà réceptionnée.\n");
+                btnReceptionner.setEnabled(false);
+                tableModel.setRowCount(0); // vider les lignes pour éviter modification
+                txtInfoCommande.setText(sb.toString());
+                return; // ne pas continuer
+            } else if ("Annulée".equals(commandeActuelle.getStatut())) {
+                sb.append("\n⚠️ Cette commande est annulée.\n");
+                btnReceptionner.setEnabled(false);
+                tableModel.setRowCount(0);
+                txtInfoCommande.setText(sb.toString());
+                return;
+            }
 
             // Afficher les lignes avec valeurs par défaut
             tableModel.setRowCount(0);
@@ -370,6 +385,15 @@ public class ReceptionnerCommandeFrame extends JFrame {
             return;
         }
 
+        // ✅ Nouvelle vérification
+        if ("Reçue".equals(commandeActuelle.getStatut())) {
+            JOptionPane.showMessageDialog(this,
+                    "Cette commande a déjà été réceptionnée !",
+                    "Erreur", JOptionPane.WARNING_MESSAGE);
+            btnReceptionner.setEnabled(false);
+            return;
+        }
+
         // Vérifier que toutes les lignes sont validées
         for (int i = 0; i < tableModel.getRowCount(); i++) {
             if (!(Boolean) tableModel.getValueAt(i, 8)) {
@@ -379,6 +403,21 @@ public class ReceptionnerCommandeFrame extends JFrame {
                 return;
             }
         }
+
+
+        // Vérifier que toutes les lignes sont validées
+        for (int i = 0; i < tableModel.getRowCount(); i++) {
+            if (!(Boolean) tableModel.getValueAt(i, 8)) {
+                JOptionPane.showMessageDialog(this,
+                        "Toutes les lignes doivent être validées avant la réception!",
+                        "Erreur", JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+        }
+
+
+
+
 
         try {
             int numCarteEmp = Integer.parseInt(txtNumCarteEmp.getText().trim());
@@ -413,13 +452,17 @@ public class ReceptionnerCommandeFrame extends JFrame {
                 double prixVente = Double.parseDouble((String) tableModel.getValueAt(i, 6));
                 int seuil = Integer.parseInt((String) tableModel.getValueAt(i, 7));
 
-                // Créer un nouveau StockMedicament
+                // ✅ REFACTORED: Créer un nouveau StockMedicament avec les dates
                 StockMedicament nouveauStock = new StockMedicament();
                 nouveauStock.setRefMedicament(ligne.getRefMedicament());
                 nouveauStock.setQuantiteProduit(ligne.getQuantite());
                 nouveauStock.setPrixAchat(ligne.getPrixUnitaire());
                 nouveauStock.setPrixVente(prixVente);
                 nouveauStock.setSeuilMin(seuil);
+
+                // ✅ DATES MAINTENANT DANS STOCKMEDICAMENT
+                nouveauStock.setDateFabrication(dateFab);
+                nouveauStock.setDateExpiration(dateExp);
 
                 // ✅ Ajouter à la base de données (NOUVELLE ligne)
                 int numStock = stockBD.ajouter(nouveauStock);
@@ -431,15 +474,9 @@ public class ReceptionnerCommandeFrame extends JFrame {
                     String nomMed = getNomMedicament(ligne.getRefMedicament());
                     details.append("• ").append(nomMed).append(": ")
                             .append(ligne.getQuantite()).append(" unités (Stock #")
-                            .append(numStock).append(")\n");
-
-                    // Mettre à jour les dates du médicament
-                    Medicament med = medicamentBD.rechercherParRef(ligne.getRefMedicament());
-                    if (med != null) {
-                        med.setDateFabrication(dateFab);
-                        med.setDateExpiration(dateExp);
-                        medicamentBD.modifier(med);
-                    }
+                            .append(numStock).append(")\n")
+                            .append("  Fab: ").append(dateFormat.format(dateFab))
+                            .append(" | Exp: ").append(dateFormat.format(dateExp)).append("\n");
                 }
             }
 
@@ -457,7 +494,8 @@ public class ReceptionnerCommandeFrame extends JFrame {
             sb.append("DÉTAILS:\n");
             sb.append(details.toString());
             sb.append("\n✅ Chaque ligne de commande a créé une\n");
-            sb.append("   nouvelle entrée dans le stock.\n");
+            sb.append("   nouvelle entrée dans le stock avec ses\n");
+            sb.append("   propres dates de fabrication/expiration.\n");
             sb.append("═══════════════════════════════════════\n");
 
             JOptionPane.showMessageDialog(this, sb.toString(),

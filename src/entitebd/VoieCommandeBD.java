@@ -5,12 +5,11 @@ import java.sql.*;
 import java.util.ArrayList;
 
 public class VoieCommandeBD {
-
+//ajouter ligne de commande
     public void ajouterLigne(VoieCommande lc) throws SQLException {
         Connection con = ConnectionBD.getConnection();
         Statement st = con.createStatement();
 
-        // ✅ CORRECTION: Calculer le prix total avant insertion
         lc.setPrixTotalVoieCommande();
 
         String sql = "INSERT INTO voie_commande " +
@@ -28,15 +27,14 @@ public class VoieCommandeBD {
 
         System.out.println("✅ Ligne de commande ajoutée");
     }
-
+//modifier ligne
     public void modifierLigne(VoieCommande lc) throws SQLException {
         Connection con = ConnectionBD.getConnection();
         Statement st = con.createStatement();
 
-        // ✅ CORRECTION: Calculer le prix total avant modification
+
         lc.setPrixTotalVoieCommande();
 
-        // ✅ CORRECTION: Table s'appelle voie_commande (pas voie_de_commande)
         String sql = "UPDATE voie_commande SET " +
                 "num_commande = " + lc.getNumCommande() + ", " +
                 "ref_medicament = " + lc.getRefMedicament() + ", " +
@@ -57,20 +55,18 @@ public class VoieCommandeBD {
         Connection con = ConnectionBD.getConnection();
         Statement st = con.createStatement();
 
-        // ✅ CORRECTION: Nom correct de la table
         String sql = "DELETE FROM voie_commande WHERE id_ligne_commande = " + idLigneCommande;
         st.executeUpdate(sql);
         st.close();
 
         System.out.println("✅ Ligne de commande supprimée");
     }
-
+//listes tous les voies d'une commande de numCommande dans un arraylist
     public ArrayList<VoieCommande> getLignesParCommande(int numCommande) throws SQLException {
         ArrayList<VoieCommande> lignes = new ArrayList<>();
         Connection con = ConnectionBD.getConnection();
         Statement st = con.createStatement();
 
-        // ✅ CORRECTION: Nom correct de la table
         String sql = "SELECT * FROM voie_commande WHERE num_commande = " + numCommande;
         ResultSet rs = st.executeQuery(sql);
 
@@ -83,13 +79,12 @@ public class VoieCommandeBD {
         st.close();
         return lignes;
     }
-
+//recupere voie par num
     public VoieCommande getLigneById(int idLigneCommande) throws SQLException {
         VoieCommande lc = null;
         Connection con = ConnectionBD.getConnection();
         Statement st = con.createStatement();
 
-        // ✅ CORRECTION: Nom correct de la table
         String sql = "SELECT * FROM voie_commande WHERE id_ligne_commande = " + idLigneCommande;
         ResultSet rs = st.executeQuery(sql);
 

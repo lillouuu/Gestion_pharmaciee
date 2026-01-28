@@ -5,11 +5,7 @@ import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Classe de gestion des clients dans la base de données
- * ✅ AJOUT: Méthode rechercherParId manquante
- * ✅ CORRECTION: Types int pour numCarteIdentite
- */
+
 public class ClientBD {
 
     /**
@@ -43,7 +39,7 @@ public class ClientBD {
     }
 
     /**
-     * ✅ AJOUT: Rechercher un client par son ID (méthode manquante)
+     *  Rechercher un client par son ID
      */
     public Client rechercherParId(int numClient) throws SQLException {
         Connection con = ConnectionBD.getConnection();
@@ -149,7 +145,6 @@ public class ClientBD {
 
     /**
      * Mapper ResultSet vers Client
-     * ✅ AJOUT: Récupération de l'âge
      */
     private Client mapResultSetToClient(ResultSet rs) throws SQLException {
         Client client = new Client();

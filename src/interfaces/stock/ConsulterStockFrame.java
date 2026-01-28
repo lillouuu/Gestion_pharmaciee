@@ -231,8 +231,8 @@ public class ConsulterStockFrame extends JFrame {
                 "m.ref_medicament, " +
                 "m.nom AS nom_medicament, " +
                 "m.descriptio, " +
-                "m.date_fabrication, " +
-                "m.date_expiration " +
+                "s.date_fabrication, " +
+                "s.date_expiration " +
                 "FROM stock_medicament s " +
                 "JOIN medicament m ON s.ref_medicament = m.ref_medicament " +
                 "ORDER BY s.num_stock";
