@@ -33,7 +33,7 @@ public class AlertesStockFrame extends JFrame {
 
         // Panel titre
         JPanel topPanel = new JPanel();
-        topPanel.setBackground(new Color(220, 53, 69));
+        topPanel.setBackground(new Color(236, 72, 153));
         topPanel.setPreferredSize(new Dimension(1000, 50));
 
         JLabel titleLabel = new JLabel("⚠ Alertes de stock faible");
@@ -82,7 +82,7 @@ public class AlertesStockFrame extends JFrame {
 
         lblCount = new JLabel("Produits en alerte: 0");
         lblCount.setFont(new Font("Arial", Font.BOLD, 13));
-        lblCount.setForeground(new Color(220, 53, 69));
+        lblCount.setForeground(new Color(236, 72, 153));
 
         lblValeurTotal = new JLabel("Valeur totale du stock: 0.00 DT");
         lblValeurTotal.setFont(new Font("Arial", Font.BOLD, 13));
@@ -100,7 +100,7 @@ public class AlertesStockFrame extends JFrame {
 
         btnRefresh = new JButton("🔄 Actualiser");
         btnRefresh.setPreferredSize(new Dimension(150, 35));
-        btnRefresh.setBackground(new Color(0, 123, 255));
+        btnRefresh.setBackground(new Color(99, 102, 241));
         btnRefresh.setForeground(Color.WHITE);
         btnRefresh.setFocusPainted(false);
         btnRefresh.addActionListener(e -> loadAlertes());

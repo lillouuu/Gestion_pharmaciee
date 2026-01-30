@@ -44,7 +44,7 @@ public class ModifierMedicamentFrame extends JFrame {
 
         // Panel titre
         JPanel topPanel = new JPanel();
-        topPanel.setBackground(new Color(255, 165, 0));
+        topPanel.setBackground(new Color(99, 102, 241));
         topPanel.setPreferredSize(new Dimension(1100, 50));
 
         JLabel titleLabel = new JLabel("✏ Modifier un médicament");
@@ -111,7 +111,7 @@ public class ModifierMedicamentFrame extends JFrame {
         gbc.gridx = 0; gbc.gridy = 0; gbc.gridwidth = 2;
         JLabel lblMed = new JLabel("📋 Informations du médicament");
         lblMed.setFont(new Font("Arial", Font.BOLD, 12));
-        lblMed.setForeground(new Color(255, 165, 0));
+        lblMed.setForeground(new Color(99, 102, 241));
         formPanel.add(lblMed, gbc);
         gbc.gridwidth = 1;
 
@@ -156,14 +156,14 @@ public class ModifierMedicamentFrame extends JFrame {
         btnPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
         btnUpdate = new JButton("💾 Modifier Médicament");
-        btnUpdate.setBackground(new Color(255, 165, 0));
+        btnUpdate.setBackground(new Color(99, 102, 241));
         btnUpdate.setForeground(Color.WHITE);
         btnUpdate.setFocusPainted(false);
         btnUpdate.setEnabled(false);
         btnUpdate.addActionListener(e -> updateMedicament());
 
         btnManageStock = new JButton("📦 Gérer les Stocks");
-        btnManageStock.setBackground(new Color(0, 123, 255));
+        btnManageStock.setBackground(new Color(236, 72, 153));
         btnManageStock.setForeground(Color.WHITE);
         btnManageStock.setFocusPainted(false);
         btnManageStock.setEnabled(false);

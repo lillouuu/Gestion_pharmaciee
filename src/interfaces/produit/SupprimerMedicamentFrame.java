@@ -38,7 +38,7 @@ public class SupprimerMedicamentFrame extends JFrame {
 
         // Panel titre
         JPanel topPanel = new JPanel();
-        topPanel.setBackground(new Color(220, 53, 69));
+        topPanel.setBackground( new Color(236, 72, 153));
         topPanel.setPreferredSize(new Dimension(1100, 50));
 
         JLabel titleLabel = new JLabel("🗑 Supprimer un médicament");
@@ -59,7 +59,7 @@ public class SupprimerMedicamentFrame extends JFrame {
         searchPanel.add(txtSearch);
 
         btnSearch = new JButton("🔍 Rechercher");
-        btnSearch.setBackground(new Color(0, 123, 255));
+        btnSearch.setBackground(new Color(99, 102, 241));
         btnSearch.setForeground(Color.WHITE);
         btnSearch.setFocusPainted(false);
         btnSearch.addActionListener(e -> searchMedicament());
@@ -108,7 +108,7 @@ public class SupprimerMedicamentFrame extends JFrame {
 
         btnDelete = new JButton("🗑 Supprimer");
         btnDelete.setPreferredSize(new Dimension(150, 35));
-        btnDelete.setBackground(new Color(220, 53, 69));
+        btnDelete.setBackground( new Color(236, 72, 153));
         btnDelete.setForeground(Color.WHITE);
         btnDelete.setFocusPainted(false);
         btnDelete.addActionListener(e -> deleteMedicament());

@@ -132,7 +132,7 @@ public class CreerCommandeFrame extends JFrame {
 
         JButton btnNouveauMed = new JButton("➕ Nouveau");
         btnNouveauMed.setToolTipText("Ajouter un nouveau médicament");
-        btnNouveauMed.setBackground(new Color(40, 167, 69));
+        btnNouveauMed.setBackground(new Color(79, 70, 229));
         btnNouveauMed.setForeground(Color.WHITE);
         btnNouveauMed.setFocusPainted(false);
         btnNouveauMed.addActionListener(e -> ajouterNouveauMedicament());
@@ -175,7 +175,7 @@ public class CreerCommandeFrame extends JFrame {
         // Bouton ajouter
         gbc.gridx = 0; gbc.gridy = 3; gbc.gridwidth = 4;
         JButton btnAjouter = new JButton("➕ Ajouter à la commande");
-        btnAjouter.setBackground(new Color(34, 139, 34));
+        btnAjouter.setBackground(new Color(79, 70, 229));
         btnAjouter.setForeground(Color.WHITE);
         btnAjouter.addActionListener(e -> ajouterLigne());
         ajoutPanel.add(btnAjouter, gbc);
@@ -207,12 +207,11 @@ public class CreerCommandeFrame extends JFrame {
         btnContinuer.addActionListener(e -> continuerAjout());
 
         JButton btnTerminer = new JButton("✅ Terminer et Créer");
-        btnTerminer.setBackground(new Color(40, 167, 69));
-        btnTerminer.setForeground(Color.WHITE);
+        btnTerminer.setBackground(new Color(79, 70, 229));
         btnTerminer.addActionListener(e -> creerCommande());
 
         JButton btnAnnuler = new JButton("❌ Annuler");
-        btnAnnuler.setBackground(new Color(220, 53, 69));
+        btnAnnuler.setBackground(new Color(236, 72, 153));
         btnAnnuler.setForeground(Color.WHITE);
         btnAnnuler.addActionListener(e -> dispose());
 

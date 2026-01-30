@@ -28,7 +28,7 @@ public class SupprimerFournisseurFrame extends JFrame {
 
         // Panel titre
         JPanel topPanel = new JPanel();
-        topPanel.setBackground(new Color(220, 53, 69));
+        topPanel.setBackground(new Color(79, 70, 229));
         topPanel.setPreferredSize(new Dimension(900, 50));
 
         JLabel titleLabel = new JLabel("🗑️ Supprimer un fournisseur");
@@ -75,14 +75,14 @@ public class SupprimerFournisseurFrame extends JFrame {
 
         btnRefresh = new JButton("🔄 Actualiser");
         btnRefresh.setPreferredSize(new Dimension(150, 35));
-        btnRefresh.setBackground(new Color(0, 123, 255));
+        btnRefresh.setBackground(new Color(236, 72, 153));
         btnRefresh.setForeground(Color.WHITE);
         btnRefresh.setFocusPainted(false);
         btnRefresh.addActionListener(e -> loadFournisseurs());
 
         btnDelete = new JButton("🗑️ Supprimer");
         btnDelete.setPreferredSize(new Dimension(150, 35));
-        btnDelete.setBackground(new Color(220, 53, 69));
+        btnDelete.setBackground(new Color(79, 70, 229));
         btnDelete.setForeground(Color.WHITE);
         btnDelete.setFocusPainted(false);
         btnDelete.addActionListener(e -> deleteFournisseur());

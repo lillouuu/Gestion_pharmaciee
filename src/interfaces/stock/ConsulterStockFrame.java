@@ -38,7 +38,7 @@ public class ConsulterStockFrame extends JFrame {
 
         // Panel titre
         JPanel topPanel = new JPanel();
-        topPanel.setBackground(new Color(0, 123, 255));
+        topPanel.setBackground(new Color(99, 102, 241));
         topPanel.setPreferredSize(new Dimension(1400, 50));
 
         JLabel titleLabel = new JLabel("👁 Consultation Stock - Vue complète (Stock ⋈ Médicament)");
@@ -67,14 +67,14 @@ public class ConsulterStockFrame extends JFrame {
 
         btnRefresh = new JButton("🔄 Actualiser");
         btnRefresh.setPreferredSize(new Dimension(150, 35));
-        btnRefresh.setBackground(new Color(0, 123, 255));
+        btnRefresh.setBackground(new Color(99, 102, 241));
         btnRefresh.setForeground(Color.WHITE);
         btnRefresh.setFocusPainted(false);
         btnRefresh.addActionListener(e -> chargerStock());
 
         btnExport = new JButton("📄 Exporter CSV");
         btnExport.setPreferredSize(new Dimension(150, 35));
-        btnExport.setBackground(new Color(40, 167, 69));
+        btnExport.setBackground(new Color(100, 116, 139));
         btnExport.setForeground(Color.WHITE);
         btnExport.setFocusPainted(false);
         btnExport.addActionListener(e -> exporterCSV());
@@ -184,7 +184,7 @@ public class ConsulterStockFrame extends JFrame {
 
         lblAlertes = new JLabel("Alertes: 0");
         lblAlertes.setFont(new Font("Arial", Font.BOLD, 13));
-        lblAlertes.setForeground(new Color(220, 53, 69));
+        lblAlertes.setForeground(new Color(236, 72, 153));
         lblAlertes.setHorizontalAlignment(SwingConstants.RIGHT);
 
         statsPanel.add(lblCount);
@@ -311,9 +311,9 @@ public class ConsulterStockFrame extends JFrame {
             lblAlertes.setText("Alertes: " + alertCount);
 
             if (alertCount > 0) {
-                lblAlertes.setForeground(new Color(220, 53, 69));
+                lblAlertes.setForeground(new Color(236, 72, 153));
             } else {
-                lblAlertes.setForeground(new Color(40, 167, 69));
+                lblAlertes.setForeground(new Color(100, 116, 139));
             }
 
         } catch (SQLException ex) {

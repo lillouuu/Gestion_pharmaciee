@@ -27,7 +27,7 @@ public class AjouterMedicamentFrame extends JFrame {
 
         // Panel titre
         JPanel topPanel = new JPanel();
-        topPanel.setBackground(new Color(0, 102, 204));
+        topPanel.setBackground(new Color(236, 72, 153));
         topPanel.setPreferredSize(new Dimension(600, 50));
 
         JLabel titleLabel = new JLabel("➕ Ajouter un nouveau médicament");
@@ -49,7 +49,7 @@ public class AjouterMedicamentFrame extends JFrame {
         gbc.gridx = 0; gbc.gridy = 0; gbc.gridwidth = 2;
         JLabel lblInfoMed = new JLabel("📋 Informations du médicament");
         lblInfoMed.setFont(new Font("Arial", Font.BOLD, 14));
-        lblInfoMed.setForeground(new Color(0, 102, 204));
+        lblInfoMed.setForeground(new Color(236, 72, 153));
         formPanel.add(lblInfoMed, gbc);
         gbc.gridwidth = 1;
 
@@ -101,7 +101,7 @@ public class AjouterMedicamentFrame extends JFrame {
 
         btnCancel = new JButton("❌ Annuler");
         btnCancel.setPreferredSize(new Dimension(150, 35));
-        btnCancel.setBackground(new Color(220, 53, 69));
+        btnCancel.setBackground(new Color(79, 70, 229));
         btnCancel.setForeground(Color.WHITE);
         btnCancel.setFocusPainted(false);
         btnCancel.addActionListener(e -> dispose());

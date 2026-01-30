@@ -35,7 +35,7 @@ public class RechercheMedicamentFrame extends JFrame {
 
         // Panel titre
         JPanel topPanel = new JPanel();
-        topPanel.setBackground(new Color(0, 123, 255));
+        topPanel.setBackground(new Color(99, 102, 241));
         topPanel.setPreferredSize(new Dimension(1100, 50));
 
         JLabel titleLabel = new JLabel("🔍 Rechercher un médicament");
@@ -52,9 +52,9 @@ public class RechercheMedicamentFrame extends JFrame {
         // Panel de recherche
         JPanel searchPanel = new JPanel(new GridBagLayout());
         searchPanel.setBorder(BorderFactory.createTitledBorder(
-                BorderFactory.createLineBorder(new Color(0, 123, 255), 2),
+                BorderFactory.createLineBorder(new Color(99, 102, 241), 2),
                 "Critères de recherche",
-                0, 0, new Font("Arial", Font.BOLD, 12), new Color(0, 123, 255)));
+                0, 0, new Font("Arial", Font.BOLD, 12), new Color(99, 102, 241)));
 
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.fill = GridBagConstraints.HORIZONTAL;
@@ -79,7 +79,7 @@ public class RechercheMedicamentFrame extends JFrame {
         JPanel searchBtnPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
 
         btnSearch = new JButton("🔍 Rechercher");
-        btnSearch.setBackground(new Color(0, 123, 255));
+        btnSearch.setBackground(new Color(99, 102, 241));
         btnSearch.setForeground(Color.WHITE);
         btnSearch.setFocusPainted(false);
         btnSearch.addActionListener(e -> performSearch());

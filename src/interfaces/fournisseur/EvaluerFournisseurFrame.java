@@ -141,7 +141,7 @@ public class EvaluerFournisseurFrame extends JFrame {
         gbc.gridx = 0; gbc.gridy = 5; gbc.gridwidth = 2;
         lblRateValue = new JLabel("⭐ 2.5 / 5.0");
         lblRateValue.setFont(new Font("Arial", Font.BOLD, 24));
-        lblRateValue.setForeground(new Color(255, 193, 7));
+        lblRateValue.setForeground(new Color(236, 72, 153));
         lblRateValue.setHorizontalAlignment(SwingConstants.CENTER);
         panel.add(lblRateValue, gbc);
         gbc.gridwidth = 1;

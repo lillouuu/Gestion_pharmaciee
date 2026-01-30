@@ -79,7 +79,7 @@ public class NouvelleVenteFrame extends JFrame {
         setLayout(new BorderLayout(10, 10));
 
         JPanel topPanel = new JPanel();
-        topPanel.setBackground(new Color(40, 167, 69));
+        topPanel.setBackground(new Color(99, 102, 241));
         topPanel.setPreferredSize(new Dimension(1200, 50));
 
         JLabel titleLabel = new JLabel("🛒 Nouvelle Vente (FEFO: First Expired, First Out)");
@@ -211,7 +211,7 @@ public class NouvelleVenteFrame extends JFrame {
 
         gbc.gridx = 0; gbc.gridy = 3; gbc.gridwidth = 4;
         JButton btnAjouter = new JButton("➕ Ajouter à la vente");
-        btnAjouter.setBackground(new Color(40, 167, 69));
+        btnAjouter.setBackground(new Color(99, 102, 241));
         btnAjouter.setForeground(Color.WHITE);
         btnAjouter.setFocusPainted(false);
         btnAjouter.addActionListener(e -> ajouterLigne());
@@ -240,7 +240,7 @@ public class NouvelleVenteFrame extends JFrame {
         // Bouton supprimer à gauche
         JPanel leftPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
         JButton btnSupprimerLigne = new JButton("🗑️ Supprimer la ligne sélectionnée");
-        btnSupprimerLigne.setBackground(new Color(220, 53, 69));
+        btnSupprimerLigne.setBackground(new Color(236, 72, 153));
         btnSupprimerLigne.setForeground(Color.WHITE);
         btnSupprimerLigne.setFocusPainted(false);
         btnSupprimerLigne.addActionListener(e -> supprimerLigneSelectionnee());
@@ -251,7 +251,7 @@ public class NouvelleVenteFrame extends JFrame {
         JPanel totalPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
         lblTotal = new JLabel("Total: 0.00 DT");
         lblTotal.setFont(new Font("Arial", Font.BOLD, 16));
-        lblTotal.setForeground(new Color(40, 167, 69));
+        lblTotal.setForeground(new Color(99, 102, 241));
         totalPanel.add(lblTotal);
         bottomPanelProduit.add(totalPanel, BorderLayout.EAST);
 
@@ -265,7 +265,7 @@ public class NouvelleVenteFrame extends JFrame {
 
         JButton btnValider = new JButton("✅ Valider la vente");
         btnValider.setPreferredSize(new Dimension(180, 40));
-        btnValider.setBackground(new Color(40, 167, 69));
+        btnValider.setBackground(new Color(99, 102, 241));
         btnValider.setForeground(Color.WHITE);
         btnValider.setFont(new Font("Arial", Font.BOLD, 14));
         btnValider.setFocusPainted(false);
@@ -276,7 +276,7 @@ public class NouvelleVenteFrame extends JFrame {
 
         JButton btnAnnuler = new JButton("❌ Annuler");
         btnAnnuler.setPreferredSize(new Dimension(120, 40));
-        btnAnnuler.setBackground(new Color(220, 53, 69));
+        btnAnnuler.setBackground(new Color(236, 72, 153));
         btnAnnuler.setForeground(Color.WHITE);
         btnAnnuler.setFocusPainted(false);
         btnAnnuler.setOpaque(true);

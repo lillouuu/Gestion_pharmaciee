@@ -218,10 +218,10 @@ public class AjusterStockFrame extends JFrame {
             String seuilText = "Seuil minimal: " + stock.getSeuilMin();
             if (stock.Alerte()) {
                 lblSeuilInfo.setText("⚠ " + seuilText + " - STOCK FAIBLE!");
-                lblSeuilInfo.setForeground(new Color(220, 53, 69));
+                lblSeuilInfo.setForeground(new Color(236, 72, 153));
             } else {
                 lblSeuilInfo.setText("✓ " + seuilText);
-                lblSeuilInfo.setForeground(new Color(40, 167, 69));
+                lblSeuilInfo.setForeground(new Color(100, 116, 139));
             }
 
             btnAjuster.setEnabled(true);
@@ -292,11 +292,11 @@ public class AjusterStockFrame extends JFrame {
             if (rbAugmenter.isSelected()) {
                 gestionStock.augmenterStock(currentRefMedicament, quantite);
                 lblStatus.setText("✓ Stock augmenté de " + quantite + " unité(s)");
-                lblStatus.setForeground(new Color(40, 167, 69));
+                lblStatus.setForeground(new Color(100, 116, 139));
             } else {
                 gestionStock.diminuerStock(currentRefMedicament, quantite);
                 lblStatus.setText("✓ Stock diminué de " + quantite + " unité(s)");
-                lblStatus.setForeground(new Color(220, 53, 69));
+                lblStatus.setForeground(new Color(236, 72, 153));
             }
 
             // Actualiser l'affichage

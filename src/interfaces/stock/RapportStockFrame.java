@@ -26,7 +26,7 @@ public class RapportStockFrame extends JFrame {
 
         // Panel titre
         JPanel topPanel = new JPanel();
-        topPanel.setBackground(new Color(40, 167, 69));
+        topPanel.setBackground(new Color(236, 72, 153));
         topPanel.setPreferredSize(new Dimension(800, 50));
 
         JLabel titleLabel = new JLabel("📊 Rapport d'état du stock");
@@ -67,14 +67,14 @@ public class RapportStockFrame extends JFrame {
 
         btnGenerate = new JButton("🔄 Actualiser");
         btnGenerate.setPreferredSize(new Dimension(140, 35));
-        btnGenerate.setBackground(new Color(0, 123, 255));
+        btnGenerate.setBackground(new Color(99, 102, 241));
         btnGenerate.setForeground(Color.WHITE);
         btnGenerate.setFocusPainted(false);
         btnGenerate.addActionListener(e -> genererRapport());
 
         btnExport = new JButton("💾 Exporter");
         btnExport.setPreferredSize(new Dimension(140, 35));
-        btnExport.setBackground(new Color(40, 167, 69));
+        btnExport.setBackground(new Color(236, 72, 153));
         btnExport.setForeground(Color.WHITE);
         btnExport.setFocusPainted(false);
         btnExport.addActionListener(e -> exporterRapport());
@@ -88,7 +88,7 @@ public class RapportStockFrame extends JFrame {
 
         btnClose = new JButton("❌ Fermer");
         btnClose.setPreferredSize(new Dimension(140, 35));
-        btnClose.setBackground(new Color(220, 53, 69));
+        btnClose.setBackground(new Color(99, 102, 241));
         btnClose.setForeground(Color.WHITE);
         btnClose.setFocusPainted(false);
         btnClose.addActionListener(e -> dispose());

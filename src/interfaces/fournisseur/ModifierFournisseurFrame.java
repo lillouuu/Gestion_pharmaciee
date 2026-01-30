@@ -31,7 +31,7 @@ public class ModifierFournisseurFrame extends JFrame {
 
         // Panel titre
         JPanel topPanel = new JPanel();
-        topPanel.setBackground(new Color(255, 165, 0));
+        topPanel.setBackground(new Color(236, 72, 153));
         topPanel.setPreferredSize(new Dimension(1000, 50));
 
         JLabel titleLabel = new JLabel("✏️ Modifier un fournisseur");
@@ -157,7 +157,7 @@ public class ModifierFournisseurFrame extends JFrame {
 
         btnUpdate = new JButton("💾 Modifier");
         btnUpdate.setPreferredSize(new Dimension(120, 35));
-        btnUpdate.setBackground(new Color(255, 165, 0));
+        btnUpdate.setBackground(new Color(236, 72, 153));
         btnUpdate.setForeground(Color.WHITE);
         btnUpdate.setFocusPainted(false);
         btnUpdate.setEnabled(false);

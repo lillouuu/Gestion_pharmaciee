@@ -54,7 +54,7 @@ public class ListerCommandesFrame extends JFrame {
         panel.add(cmbFiltre);
 
         JButton btnActualiser = new JButton("🔄 Actualiser");
-        btnActualiser.setBackground(new Color(0, 123, 255));
+        btnActualiser.setBackground(new Color(236, 72, 153));
         btnActualiser.setForeground(Color.WHITE);
         btnActualiser.addActionListener(e -> chargerCommandes((String) cmbFiltre.getSelectedItem()));
         panel.add(btnActualiser);
@@ -113,7 +113,7 @@ public class ListerCommandesFrame extends JFrame {
         JPanel panel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
 
         JButton btnDetails = new JButton("📋 Voir Détails");
-        btnDetails.setBackground(new Color(0, 123, 255));
+        btnDetails.setBackground(new Color(236, 72, 153));
         btnDetails.setForeground(Color.WHITE);
         btnDetails.addActionListener(e -> afficherDetails());
 

@@ -46,7 +46,7 @@ public class AnnulerCommandeFrame extends JFrame {
         panel.add(txtNumCommande);
 
         JButton btnRechercher = new JButton("🔍 Rechercher");
-        btnRechercher.setBackground(new Color(0, 123, 255));
+        btnRechercher.setBackground(new Color(236, 72, 153));
         btnRechercher.setForeground(Color.WHITE);
         btnRechercher.addActionListener(e -> rechercherCommande());
         panel.add(btnRechercher);
@@ -74,7 +74,7 @@ public class AnnulerCommandeFrame extends JFrame {
         JPanel panel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
 
         JButton btnAnnuler = new JButton("❌ Annuler la Commande");
-        btnAnnuler.setBackground(new Color(220, 53, 69));
+        btnAnnuler.setBackground(new Color(79, 70, 229));
         btnAnnuler.setForeground(Color.WHITE);
         btnAnnuler.setFont(new Font("Arial", Font.BOLD, 14));
         btnAnnuler.addActionListener(e -> annulerCommande());
